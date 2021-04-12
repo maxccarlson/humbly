@@ -1,0 +1,22 @@
+<!-- templates/home.html -->
+{% extends 'base.html' %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+{% if user.is_authenticated %}
+    
+    Hello {{ user.username }}! Would you like to create or view a request?
+    <p>    
+        <a href="{% url 'create' %}" class="button">Create a Request</a>
+    </p>
+    <p>
+        <a href="{% url 'view' %}" class="button">View a Request</a>    
+    </p>
+
+<p><a href="{% url 'logout' %}">Log Out</a></p>
+{% else %}
+  <p>You are not logged in</p>
+  <a href="{% url 'login' %}">Log In</a>
+{% endif %}
+{% endblock %}
