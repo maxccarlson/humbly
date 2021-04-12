@@ -1,0 +1,13 @@
+<!-- templates/view.html -->
+{% extends 'base.html' %}
+
+{% block title %}View a Request{% endblock %}
+
+{% block content %}
+{% load auth_extras %}
+{% if request.user|has_group:'Approver' %}
+<h2>Pending Requests</h2>
+{% elif request.user|has_group:'Requester' %}
+<h2>Your Pending Requests<h2>
+{% endif %}
+{% endblock %}
