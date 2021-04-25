@@ -13,12 +13,15 @@ def create(request):
             form.save()
             return
     else:
-        form = RequestForm(initial={"reqNo": 0,
+        form = RequestForm(initial={"requestNumber": 0,
                                     "requester": request.user.username,
                                     "price": 0.00,
                                     "urgency": 1,
                                     "state": "Pending"})
-    
+        form.fields['state'].disabled = True
+        
+        #if form.fields['urgency'] > 2:
+        #    form.fields['justification'].disabled = True
     
         
     return render(request, 'create.html', {'form': form})
