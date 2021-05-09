@@ -3,19 +3,9 @@ from django.forms import ModelForm, Textarea
 from .models import MyRequest
 
 class RequestForm(ModelForm):
-    disabled_fields = ('requestNumber','requester')
-    
-
-
-    
+    disabled_fields = ('requestNumber','requester','state')
+        
     class Meta:
-        URGENCY_CHOICES = (
-            (1,'1 - Low'),
-            (2,'2 - Moderate'),
-            (3,'3 - High'),
-            (4,'4 - Critical'),
-        )
-        #urgency = forms.TypedChoiceField(choices=URGENCY_CHOICES, coerce=int)
         model = MyRequest
         fields = '__all__'    
         widgets = {
@@ -28,3 +18,7 @@ class RequestForm(ModelForm):
         super(RequestForm, self).__init__(*args, **kwargs)   
         for field in self.disabled_fields:
             self.fields[field].disabled = True
+    
+    def check_justification():
+        if self.instance.get_urgency_display == 'CRITICAL':
+            self.fields['justification'].disabled = True

@@ -1,22 +1,25 @@
 <!-- templates/home.html -->
 {% extends 'base.html' %}
 
-{% block title %}Home{% endblock %}
-
+{% block title %}humbly{% endblock %}
 {% block content %}
+<h1>humbly</h1>
+<h2>Request Management</h2>
 {% if user.is_authenticated %}
-    
-    Hello {{ user.username }}! Would you like to create or view a request?
+    <br>       
+        Hello {{ user.username }}! Would you like to create or view a request?
+    <br>
+    <br>
     <p>    
         <a href="{% url 'create' %}" class="button">Create a Request</a>
     </p>
     <p>
-        <a href="{% url 'view' %}" class="button">View a Request</a>    
+        <a href="{% url 'view' %}" class="button">View Requests</a>    
     </p>
-
-<p><a href="{% url 'logout' %}">Log Out</a></p>
+    <br>
+    <p><a href="{% url 'logout' %}">Log Out</a></p>
 {% else %}
-  <p>You are not logged in</p>
-  <a href="{% url 'login' %}">Log In</a>
+    <p>You are not logged in</p>
+    <a href="{% url 'login' %}">Log In</a>
 {% endif %}
 {% endblock %}
