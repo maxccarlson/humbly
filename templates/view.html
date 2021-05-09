@@ -1,0 +1,44 @@
+<!-- templates/view.html -->
+{% extends 'base.html' %}
+
+{% block title %}humbly{% endblock %}
+
+{% block content %}
+{% load auth_extras %}
+
+{% if request.user|has_group:'Approver' %}
+<h2>Pending Requests</h2>
+{% elif request.user|has_group:'Requester' %}
+<h2>Your Pending Requests</h2>
+{% endif %}
+
+
+<table>
+    <tr>
+        <th>Req. No.</th>
+        <th>State</th>
+        <th>Requester</th>
+        <th>Description</th>
+        <th>Price</th>
+        <th>Urgency</th>
+        <th>Justification</th>
+        <th>Notes</th>
+    </tr>    
+    {% for item in myList %}
+    <tr>
+        <td>{{ item.requestNumber }}</td>
+        <td>{{ item.state }}</td>
+        <td>{{ item.requester }}</td>
+        <td>{{ item.description }}</td>
+        <td>{{ item.price }}</td>
+        <td>{{ item.urgency }}</td>
+        <td>{{ item.justification }}</td>
+        <td>{{ item.notes }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+
+
+
+{% endblock %}
