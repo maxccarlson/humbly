@@ -29,7 +29,4 @@ class MyRequest(models.Model):
     def __int__(self):
         return self.requestNumber
     
-    def check_justification():
-        if get_urgency_display == 'CRITICAL':
-            justification.disabled = True
 

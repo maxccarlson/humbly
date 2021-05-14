@@ -7,7 +7,7 @@
 
 <h2>Create a Request</h2>
 <form method="post">
-    {% csrf_token %}
+    {% csrf_token %}        
     {{ form.as_p }}
     <button type="submit">Create Request</button>
 </form>

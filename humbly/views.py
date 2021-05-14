@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User, Group
 from django import template
 from .forms import RequestForm
@@ -7,12 +7,11 @@ from .models import MyRequest
 register = template.Library()
 
 # Create your views here.
-def create(request):   
-
-    
+def create(request):       
+        
 
     if request.method == 'POST':
-        form = RequestForm(request.POST)
+        form = RequestForm(request.POST)       
         if form.is_valid():
             form.save()
             return redirect('view')
@@ -23,14 +22,10 @@ def create(request):
                                     "requester": request.user.username,
                                     "price": 0.00,
                                     "urgency": 1,
-                                    "state": "Pending"})
-        
-        #if form.fields['urgency'].get_urgency_display > 2:
-        #    form.fields['justification'].disabled = True
-        form.fields['urgency'].widget.attrs['onchange'] = 'check_justification()'
-        
+                                    "state": "Pending"})                
         
     return render(request, 'create.html', {'form': form})
+
 
 def view(request):    
     myRequests = MyRequest.objects.filter(requester=request.user.username)
