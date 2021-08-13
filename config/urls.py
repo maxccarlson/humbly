@@ -16,11 +16,16 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.views.generic.base import TemplateView 
+from rest_framework import routers
 from humbly import views
+
+router = routers.DefaultRouter()
+router.register(r'humbly',views.viewView,'humbly')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')),
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
     path('', include('humbly.urls')),
+    path('api/', include(router.urls)),
 ]

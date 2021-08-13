@@ -8,7 +8,7 @@ class RequestForm(ModelForm):
     class Meta:
         model = MyRequest
         fields = '__all__'   
-        exclude = ('requestNumber','requester','state',) 
+        #exclude = ('requestNumber','requester','state',) 
         widgets = {
             'description' : Textarea(attrs={'cols': 80, 'rows': 5}),
             'justification' : Textarea(attrs={'cols': 80, 'rows': 5}),

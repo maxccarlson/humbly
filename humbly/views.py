@@ -1,15 +1,21 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User, Group
 from django import template
+from rest_framework import viewsets
 from .forms import RequestForm
 from .models import MyRequest
+from .serializers import HumblySerializer
 
 register = template.Library()
 
 # Create your views here.
+
+class viewView(viewsets.ModelViewSet):
+    serializer_class = HumblySerializer
+    queryset = MyRequest.objects.all()
+
 def create(request):       
         
-
     if request.method == 'POST':
         form = RequestForm(request.POST)       
         if form.is_valid():
