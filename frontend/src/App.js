@@ -1,21 +1,9 @@
 import logo from './logo.svg';
 import './App.css';
-import React, { Component } from "react";
+import React, { Component, Header } from "react";
 import Modal from "./components/Modal";
 import axios from "axios";
-
-const requestItems = [
-  {
-    requestNumber:999,
-    state:"state",
-    requester:"requester",
-    description:"description",
-    price:0,
-    urgency:"urgency",
-    justification:"justification",
-    notes:"notes",
-  }
-]
+import { Badge } from 'reactstrap';
 
 class App extends Component {
   constructor(props) {
@@ -48,14 +36,15 @@ class App extends Component {
   handleSubmit = (item) => {
     this.toggle();
 
-    if (item.id) {
+    if (item.requestNumber) {
       axios
         .put(`/api/humbly/${item.requestNumber}/`, item)
         .then((res) => this.refreshList());
       return;
     }
+    item.requestNumber = "1";
     axios
-      .post("/api/todos/", item)
+      .post("/api/humbly/", item)
       .then((res) => this.refreshList());
   };
 
@@ -78,29 +67,32 @@ class App extends Component {
 
   renderItems = () => {
     return this.state.requestList.map((item) => (
-      <li 
-        key={item.requestNumber}
-        className="list-group-item d-flex justify-content-between align-items-center"
-      >
-        <span
-          className={'requestitem'}
-          title={item.description}
-          >
-            {item.description}                        
-          </span>
-          <span>
-            <button
-              className="btn btn-secondary mr-2"
-              onClick={() => this.editItem(item)}
-            >Edit
-            </button>
-            <button
-              className="btn btn-danger"
-              onClick={() => this.handleDelete(item)}
-            >Delete
-            </button>
-          </span>          
-        </li>
+      
+      <tr key={item.requestNumber}>        
+        <th scope="row">{item.requestNumber}</th>
+        <td>{item.state}</td>
+        <td>{item.requester}</td>
+        <td>{item.description}</td>
+        <td>{item.price}</td>
+        <td>{item.urgency}</td>
+        <td>{item.justification}</td>
+        <td>{item.notes}</td>
+          
+        <td>
+          <button
+            className="btn btn-secondary mr-2"
+            onClick={() => this.editItem(item)}
+          >Edit
+          </button>
+        </td>
+        <td>
+          <button
+            className="btn btn-danger"
+            onClick={() => this.handleDelete(item)}
+          >Delete
+          </button>
+        </td>          
+      </tr>    
     ));
   };
 
@@ -109,20 +101,35 @@ class App extends Component {
       <main className="container">
         <h1 className="text-white text-uppercase text-center my-4">Todo app</h1>
         <div className="row">
-          <div className="col-md-6 col-sm-10 mx-auto p-0">
-            <div className="card p-3">
-              <div className="mb-4">
-                <button
-                  className="btn btn-primary"
-                  onClick={this.createItem}
-                >
-                  Add request
-                </button>
-              </div>
-              <ul className="list-group list-group-flush border-top-0">
-                {this.renderItems()}
-              </ul>
+          <div className="col-md-6 col-sm-10 mx-auto p-0"> 
+            <h1>humbly</h1>           
+            <h2 className="mb-5">Request Management</h2>
+            <div></div>
+            <div className="mb-4">
+              <button
+                className="btn btn-primary"
+                onClick={this.createItem}
+              >
+                Add request
+              </button>
             </div>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th scope="col">Req. No.</th>
+                  <th scope="col">State</th>
+                  <th scope="col">Requester</th>
+                  <th scope="col">Description</th>
+                  <th scope="col">Price</th>
+                  <th scope="col">Urgency</th>
+                  <th scope="col">Justification</th>
+                  <th scope="col">Notes</th>
+                </tr>
+              </thead>
+              <tbody>
+                {this.renderItems()}
+              </tbody>
+            </table>            
           </div>
         </div>
         {this.state.modal ? (

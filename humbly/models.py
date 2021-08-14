@@ -17,7 +17,7 @@ class Urgency(models.IntegerChoices):
 
 
 class MyRequest(models.Model):
-    requestNumber = models.IntegerField()
+    requestNumber = models.AutoField(primary_key=True,)
     state = models.CharField(max_length=10, choices=STATE_CHOICES, default='pending')
     requester = models.CharField(max_length=100)
     description = models.CharField(max_length=500)
