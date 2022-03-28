@@ -1,7 +1,5 @@
-# humbly
+## Setting up & Deploying JWT based auth using Flask & React
 
-Humbly is a request management web application developed using the Django Web framework for Python and React JS.
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app) and is a part of [this tutorial](https://yasoob.me/posts/how-to-setup-and-deploy-jwt-auth-using-react-and-flask/) on my blog. It teaches you how to implement login functionality step by step and deploy the resulting web app using NGINX and Gunicorn.
 
-Humbly accounts can be one of two roles: Requester or Approver.  
-Requesters can create requests and view request they've made.  
-Approvers can create requests, approve or deny requests, and view all pending requests and requests they've approved or denied.
+Read the article to make sense of this codebase :)
