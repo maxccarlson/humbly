@@ -1,0 +1,16 @@
+<!-- templates/base.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}humbly{% endblock %}</title>
+</head>
+<body>
+  <main>    
+    {% block content %}
+    <h2>{{ req }}</h2>
+    {% endblock %}
+
+  </main>
+</body>
+</html>

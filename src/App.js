@@ -8,7 +8,7 @@ import {
   Redirect,
   Link
 } from "react-router-dom";
-import {login, authFetch, useAuth, logout} from "./auth"
+import {login, authFetch, useAuth, logout} from "./auth";
 
 
 const PrivateRoute = ({ component: Component, ...rest }) => {
@@ -35,7 +35,7 @@ class App extends Component {
   render() {           
       return (   
         <main className="container">
-        <h1 className="text-white text-uppercase text-center my-4">humbly</h1>
+        <h1 className="text-white text-lowercase text-center my-4">humbly</h1>                        
         <div className="row">
           <div className="col-md-6 col-sm-10 mx-auto p-0">                        
             <h2 className="mb-5">Request Management</h2>
@@ -131,7 +131,7 @@ function Login() {
       'username': username,
       'password': password
     }
-    console.log(opts)
+    console.log(opts)    
     fetch('/api/login', {
       method: 'post',
       body: JSON.stringify(opts)
@@ -165,7 +165,14 @@ function Login() {
 
   const handleRegister = (item) => {
     toggle();
-    console.log(item);
+    fetch('api/register', {
+      method:'post',
+      body: JSON.stringify(item)
+    }).then(r => r.json())
+    .then(req => {
+      console.log("REQ=" + req.access_token)
+    }) ;
+
     /*
     if (item.requestNumber) {
       axios
@@ -182,7 +189,7 @@ function Login() {
 
   return (
     <div>      
-      {!logged? <form action="#">
+      {!logged? <div><form action="#">
         <h2>Login</h2>
         <div>
           <input type="text" 
@@ -201,13 +208,13 @@ function Login() {
         </div>
         <button className="btn btn-secondary mr-2" onClick={onSubmitClick} type="submit">
           Sign In
-        </button>
+        </button>        
+      </form>    
         <button className="btn btn-secondary mr-2" onClick={onCreateAccount} type="submit">
           Create Account
         </button>
-      </form>
+      </div>  
       : <button onClick={() => logout()}>Sign Out</button>}
-
       {modal ? (
               <RegisterModal
                 activeItem={{

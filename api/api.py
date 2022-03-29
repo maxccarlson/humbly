@@ -1,13 +1,36 @@
+from enum import unique
 import os
+from urllib import request
 import flask
 import flask_sqlalchemy
 import flask_praetorian
 import flask_cors
+from sqlalchemy.sql.expression import func
+import logging
 
 db = flask_sqlalchemy.SQLAlchemy()
 guard = flask_praetorian.Praetorian()
 cors = flask_cors.CORS()
 
+
+class Organization(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.Text, unique=True)
+    name = db.Column(db.Text)
+
+    @property
+    def get_id(self):
+        return self.id
+    
+    @property
+    def get_code(self):
+        return self.code
+
+    @property
+    def get_name(self):
+        return self.name
+
+    
 
 # A generic user model that might be used by an app powered by flask-praetorian
 class User(db.Model):
@@ -41,6 +64,8 @@ class User(db.Model):
         return self.is_active
 
 
+
+
 # Initialize flask app for the example
 app = flask.Flask(__name__, static_folder='../build', static_url_path=None)
 app.debug = True
@@ -58,8 +83,11 @@ db.init_app(app)
 # Initializes CORS so that the api_tool can talk to the example app
 cors.init_app(app)
 
+logging.basicConfig(level=logging.DEBUG)
+
 # Add users for the example
 with app.app_context():
+    db.drop_all()
     db.create_all()
     if db.session.query(User).filter_by(username='max').count() < 1:
         db.session.add(User(
@@ -67,6 +95,12 @@ with app.app_context():
           password=guard.hash_password('pass'),
           roles='admin',
           organization='TEST'
+		))
+    if db.session.query(Organization).filter_by(id='TEST').count() < 1:
+        db.session.add(Organization(
+          id=0,
+          code='TEST',
+          name='Test Organization'
 		))
     db.session.commit()
 
@@ -84,18 +118,36 @@ def login():
     .. example::
        $ curl http://localhost:5000/api/login -X POST \
          -d '{"username":"max","password":"pass"}'
-    """
-    req = flask.request.get_json(force=True)
+    """      
+    req = flask.request.get_json(force=True)                
     username = req.get('username', None)
     password = req.get('password', None)
     user = guard.authenticate(username, password)
-    ret = {'access_token': guard.encode_jwt_token(user)}
+    ret = {'access_token': guard.encode_jwt_token(user)}        
     return ret, 200
+    
+    
 
 @app.route('/api/register', methods=['POST'])
-def register():
-    ret = {'access_token': ''}
-    return ret,200
+def register():    
+    req = flask.request.get_json(force=True)  
+    nextId = db.session.query(func.max(User.id))
+    print("req")
+    print(req)
+    print("nextId")
+    print(nextId)
+    # with app.app_context():
+    #     db.session.add(User(
+    #         id=nextId,
+    #         username='a',#req.get('username', None),
+    #         password=guard.hash_password('a'),#req.get('password', None),
+    #         roles='user',
+    #         organization='TEST',
+    #         is_active=True,
+    #         ))     
+    #     db.session.commit()
+    # ret = {'access_token': ''}    
+    return {'req':req},200
 
 @app.route('/api/refresh', methods=['POST'])
 def refresh():
@@ -133,25 +185,8 @@ def catch_all(path):
     if path != "" and os.path.exists(os.path.join('..','build',path)):
         return app.send_static_file(path)
     else:
-        return app.send_static_file('index.html')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return app.send_static_file('base.html')
 
 # Run the example
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
