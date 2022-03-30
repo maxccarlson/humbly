@@ -192,7 +192,7 @@ function Login() {
   return (
     <div>      
       {!logged? <div><form action="#">
-        <h2>Login</h2>
+        <h2>Log In</h2>
         <div style={{padding: '3px'}}></div>
         <div>
           <input type="text" 

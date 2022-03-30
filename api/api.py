@@ -14,12 +14,10 @@ db = flask_sqlalchemy.SQLAlchemy()
 guard = flask_praetorian.Praetorian()
 cors = flask_cors.CORS()
 
-
 class Organization(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.Text, unique=True)
-    name = db.Column(db.Text)
-
+    name = db.Column(db.Text)    
 
     @property
     def get_id(self):
@@ -33,7 +31,14 @@ class Organization(db.Model):
     def get_name(self):
         return self.name
 
+    @property
+    def get_allow_list(self):
+        return self.allow_list
     
+class AllowList(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    organization = db.Column(db.Text)
+    user_id = db.Column(db.Integer)
 
 # A generic user model that might be used by an app powered by flask-praetorian
 class User(db.Model):
@@ -66,7 +71,16 @@ class User(db.Model):
     def is_valid(self):
         return self.is_active
 
-
+    @property
+    def meta(self):
+        return {
+            "id: " : self.id,
+            "username: " : self.username,
+            "password: " : self.password,
+            "roles: " : self.roles,
+            "organization: " : self.organization,
+            "is_active: " : self.is_active
+        }
 
 
 # Initialize flask app for the example
@@ -99,10 +113,15 @@ with app.app_context():
           roles='admin',
           organization='TEST'
 		))
-    if db.session.query(Organization).filter_by(id='TEST').count() < 1:
+    if db.session.query(Organization).filter_by(code='TEST').count() < 1:
         db.session.add(Organization(
           code='TEST',
-          name='Test Organization'
+          name='Test Organization',
+		))
+    if db.session.query(AllowList).filter_by(id=1).count() < 1:
+        db.session.add(AllowList(
+          organization='TEST',
+          user_id=1,
 		))
     db.session.commit()
 
@@ -132,12 +151,13 @@ def login():
 
 @app.route('/api/register', methods=['POST'])
 def register():    
-    req = flask.request.get_json(force=True)  
-    nextId = [item[0] for item in (db.session.query(func.max(User.id)).all())]    
-    print("req")
-    print(req.get('username', None))
-    print("nextId")
-    print(nextId)
+    req = flask.request.get_json(force=True)    
+
+
+
+
+
+
     with app.app_context():
         db.session.add(User(
             username=req.get('username', None),
@@ -146,7 +166,20 @@ def register():
             organization=req.get('organization', None),
             is_active=True,
             ))     
+        db.session.add(AllowList(
+          organization=req.get('organization', None),
+          user_id = ''.join(str(e) for e in [item[0] for item in (db.session.query(func.max(User.id)).all())]).replace('[','').replace(']','') 
+		))
         db.session.commit()
+
+    # allows = db.session.query(AllowList).all()
+    # for allow in allows:
+    #     print(allow.user_id)
+
+    # users = db.session.query(User).all()
+    # for user in users:
+    #     print(user.meta)
+    
     ret = {'access_token': ''}    
     return ret, 200
 
@@ -186,7 +219,7 @@ def catch_all(path):
     if path != "" and os.path.exists(os.path.join('..','build',path)):
         return app.send_static_file(path)
     else:
-        return app.send_static_file('base.html')
+        return app.send_static_file('index.html')
 
 # Run the example
 if __name__ == '__main__':
