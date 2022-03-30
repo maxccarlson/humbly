@@ -21,7 +21,6 @@ const PrivateRoute = ({ component: Component, ...rest }) => {
   )} />
 }
 
-
 class App extends Component {
 
   constructor(props) {
@@ -32,12 +31,15 @@ class App extends Component {
     }
   }
 
+  
+
   render() {           
       return (   
         <main className="container">
-        <h1 className="text-white text-lowercase text-center my-4">humbly</h1>                        
+        <div style={{padding: '3px'}}></div>
+        <h1 className="text-lowercase text-center my-4">humbly</h1>                        
         <div className="row">
-          <div className="col-md-6 col-sm-10 mx-auto p-0">                        
+          <div style={{ width: "auto"}} className="col-md-6 col-sm-10 mx-auto p-0">                        
             <h2 className="mb-5">Request Management</h2>
               <InnerApp />
           </div>
@@ -191,6 +193,7 @@ function Login() {
     <div>      
       {!logged? <div><form action="#">
         <h2>Login</h2>
+        <div style={{padding: '3px'}}></div>
         <div>
           <input type="text" 
             placeholder="Username" 
@@ -198,6 +201,7 @@ function Login() {
             value={username} 
           />
         </div>
+        <div style={{padding: '3px'}}></div>
         <div>
           <input
             type="password"
@@ -206,13 +210,15 @@ function Login() {
             value={password}
           />
         </div>
+        <div style={{padding: '3px'}}></div>
         <button className="btn btn-secondary mr-2" onClick={onSubmitClick} type="submit">
           Sign In
         </button>        
       </form>    
-        <button className="btn btn-secondary mr-2" onClick={onCreateAccount} type="submit">
-          Create Account
-        </button>
+      <div style={{padding: '3px'}}></div>
+      <button className="btn btn-secondary mr-2" onClick={onCreateAccount} type="submit">
+        Create Account
+      </button>
       </div>  
       : <button onClick={() => logout()}>Sign Out</button>}
       {modal ? (
