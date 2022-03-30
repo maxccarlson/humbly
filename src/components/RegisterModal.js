@@ -77,7 +77,8 @@ export default class RegisterModal extends Component {
         </ModalBody>
         <ModalFooter>
           <Button
-            color="success"
+            color="blue"
+            className="btn btn-primary"
             onClick={() => onSave(this.state.activeItem)}
           >
             Save

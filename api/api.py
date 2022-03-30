@@ -1,4 +1,7 @@
 #from ast import operator
+from ast import Or
+from email.policy import default
+from http import server
 import operator
 from enum import unique
 import os
@@ -9,6 +12,7 @@ import flask_praetorian
 import flask_cors
 from sqlalchemy.sql.expression import func
 import logging
+from datetime import date
 
 db = flask_sqlalchemy.SQLAlchemy()
 guard = flask_praetorian.Praetorian()
@@ -47,7 +51,7 @@ class User(db.Model):
     password = db.Column(db.Text)
     roles = db.Column(db.Text)
     organization = db.Column(db.Text)
-    is_active = db.Column(db.Boolean, default=True, server_default='true')
+    is_active = db.Column(db.Boolean, default=True, server_default='true')    
 
     @property
     def rolenames(self):
@@ -82,6 +86,20 @@ class User(db.Model):
             "is_active: " : self.is_active
         }
 
+class Request(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    organization = db.Column(db.Text)
+    req_user_id = db.Column(db.Integer)
+    title = db.Column(db.Text)
+    description = db.Column(db.Text)
+    cost = db.Column(db.Numeric)
+    cost_is_estimated = db.Column(db.Boolean)
+    type = db.Column(db.Text)
+    status = db.Column(db.Text)    
+    create_date = db.Column(db.Date)
+    update_date = db.Column(db.Date)
+    
+    
 
 # Initialize flask app for the example
 app = flask.Flask(__name__, static_folder='../build', static_url_path=None)
@@ -144,30 +162,33 @@ def login():
     username = req.get('username', None)
     password = req.get('password', None)
     user = guard.authenticate(username, password)
-    ret = {'access_token': guard.encode_jwt_token(user)}        
+    ret = {'access_token': guard.encode_jwt_token(user)}       
     return ret, 200
     
     
 
 @app.route('/api/register', methods=['POST'])
 def register():    
+
     req = flask.request.get_json(force=True)    
+    org = req.get('organization', None)
 
+    exists = db.session.query(Organization).filter_by(code=org).first() is not None
 
-
-
-
+    if not exists:
+        ret = {'failure': 'Organization does not exist.'}  
+        return ret, 200
 
     with app.app_context():
         db.session.add(User(
             username=req.get('username', None),
             password=guard.hash_password(req.get('password', None)),
             roles='user',
-            organization=req.get('organization', None),
+            organization=org,
             is_active=True,
             ))     
         db.session.add(AllowList(
-          organization=req.get('organization', None),
+          organization=org,
           user_id = ''.join(str(e) for e in [item[0] for item in (db.session.query(func.max(User.id)).all())]).replace('[','').replace(']','') 
 		))
         db.session.commit()
@@ -180,7 +201,7 @@ def register():
     # for user in users:
     #     print(user.meta)
     
-    ret = {'access_token': ''}    
+    ret = {'access_token': ''}  
     return ret, 200
 
 @app.route('/api/refresh', methods=['POST'])
@@ -211,6 +232,53 @@ def protected():
     """
     return {"message": f'protected endpoint (allowed user {flask_praetorian.current_user().username})'}
 
+@app.route('/api/create_request', methods=['POST'])
+@flask_praetorian.auth_required
+def create_request():    
+    
+    user = flask_praetorian.current_user()    
+    req = flask.request.get_json(force=True)    
+    cost = req.get('cost')
+    type = "Normal"        
+
+    if not cost.isdecimal():
+        ret = {'failure': 'Cost must be a decimal value'}  
+        return ret, 200
+
+    if req.get('urgent'):
+        type = "Urgent"
+
+    with app.app_context():
+        db.session.add(Request(
+                organization = user.organization,
+                req_user_id = user.id,
+                title = req.get('title', None),
+                description = req.get('description', None),
+                cost = cost,
+                type = type,
+                status = "Pending",
+                create_date = date.today(),
+                update_date = date.today()
+            ))     
+        db.session.commit()
+
+    reqs = db.session.query(Request).all()
+    for req in reqs:
+        print(req.organization)
+        print(req.req_user_id)
+        print(req.title)
+        print(req.description)
+        print(req.cost)
+        print(req.type)
+        print(req.status)
+        print(req.create_date)
+
+    # users = db.session.query(User).all()
+    # for user in users:
+    #     print(user.meta)
+    
+    ret = {'access_token': ''}  
+    return ret, 200
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')

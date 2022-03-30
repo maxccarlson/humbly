@@ -1,6 +1,7 @@
 import './App.css';
 import React, { Component, useEffect, useState } from "react";
 import RegisterModal from "./components/RegisterModal";
+import Modal from "./components/Modal";
 import {
   BrowserRouter as Router,
   Switch,
@@ -31,8 +32,6 @@ class App extends Component {
     }
   }
 
-  
-
   render() {           
       return (   
         <main className="container">
@@ -48,11 +47,6 @@ class App extends Component {
       ); 
     }            
   
-
-  createRequest = () => {
-
-  }
-    
   renderList = () => {
     
   }
@@ -81,14 +75,40 @@ class App extends Component {
 }
 
 function InnerApp() {
-  const [logged] = useAuth();
+  const [modal, setModal] = useState('')
+  
+  const [logged] = useAuth();  
+
+  const onCreateRequest = () => {
+    toggle();
+  }
+
+  const toggle = () => {  
+    setModal(!modal);
+  }  
+
+  const handleRegister = (item) => {
+    toggle();
+    authFetch('api/create_request', {
+      method:'post',
+      body: JSON.stringify(item)
+    }).then(r => r.json())
+    // .then(ret => {
+    //   if (ret.failure > '')
+    //     setErrorMessage(ret.failure)     
+    //   else
+    //     setErrorMessage('')     
+    // }) ;
+  };
+
+
   if(logged){
     return(    
       <div>             
         <div className="mb-4">
           <button
             className="btn btn-primary"
-            onClick={App.createRequest}
+            onClick={onCreateRequest}
           >
             New Request
           </button>
@@ -108,7 +128,17 @@ function InnerApp() {
             {App.renderList}
           </tbody>
         </table>          
-        <Login/>               
+        <Login/> 
+        {modal ? (
+              <Modal
+                activeItem={{
+                  username: "",
+                  password: "",
+                  organization: "TEST"}}
+                toggle={toggle}
+                onSave={handleRegister}
+              />
+      ) : null}              
       </div>                     
     );      
   }
@@ -123,6 +153,7 @@ function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [modal, setModal] = useState('')
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [logged] = useAuth();
 
@@ -144,7 +175,7 @@ function Login() {
           console.log(token)          
         }
         else {
-          console.log("Please type in correct username/password")
+          setErrorMessage("Incorrect username/password")
         }
       })
   }
@@ -171,22 +202,12 @@ function Login() {
       method:'post',
       body: JSON.stringify(item)
     }).then(r => r.json())
-    .then(req => {
-      console.log("REQ=" + req.access_token)
+    .then(ret => {
+      if (ret.failure > '')
+        setErrorMessage(ret.failure)     
+      else
+        setErrorMessage('')     
     }) ;
-
-    /*
-    if (item.requestNumber) {
-      axios
-        .put(`/api/humbly/${item.requestNumber}/`, item)
-        .then((res) => this.refreshList());
-      return;
-    }
-    item.requestNumber = "1";
-    axios
-      .post("/api/humbly/", item)
-      .then((res) => this.refreshList());
-      */
   };
 
   return (
@@ -211,6 +232,8 @@ function Login() {
           />
         </div>
         <div style={{padding: '3px'}}></div>
+        {errorMessage && <div style={{color:"red"}} className="error"> {errorMessage} </div>}
+        <div style={{padding: '3px'}}></div>
         <button className="btn btn-secondary mr-2" onClick={onSubmitClick} type="submit">
           Sign In
         </button>        
@@ -220,7 +243,9 @@ function Login() {
         Create Account
       </button>
       </div>  
-      : <button onClick={() => logout()}>Sign Out</button>}
+      : <button className="btn btn-secondary mr-2" onClick={() => logout()}>
+        Sign Out
+      </button>}
       {modal ? (
               <RegisterModal
                 activeItem={{
