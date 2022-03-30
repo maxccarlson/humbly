@@ -1,3 +1,5 @@
+#from ast import operator
+import operator
 from enum import unique
 import os
 from urllib import request
@@ -17,6 +19,7 @@ class Organization(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.Text, unique=True)
     name = db.Column(db.Text)
+
 
     @property
     def get_id(self):
@@ -98,7 +101,6 @@ with app.app_context():
 		))
     if db.session.query(Organization).filter_by(id='TEST').count() < 1:
         db.session.add(Organization(
-          id=0,
           code='TEST',
           name='Test Organization'
 		))
@@ -131,23 +133,22 @@ def login():
 @app.route('/api/register', methods=['POST'])
 def register():    
     req = flask.request.get_json(force=True)  
-    nextId = db.session.query(func.max(User.id))
+    nextId = [item[0] for item in (db.session.query(func.max(User.id)).all())]    
     print("req")
-    print(req)
+    print(req.get('username', None))
     print("nextId")
     print(nextId)
-    # with app.app_context():
-    #     db.session.add(User(
-    #         id=nextId,
-    #         username='a',#req.get('username', None),
-    #         password=guard.hash_password('a'),#req.get('password', None),
-    #         roles='user',
-    #         organization='TEST',
-    #         is_active=True,
-    #         ))     
-    #     db.session.commit()
-    # ret = {'access_token': ''}    
-    return {'req':req},200
+    with app.app_context():
+        db.session.add(User(
+            username=req.get('username', None),
+            password=guard.hash_password(req.get('password', None)),
+            roles='user',
+            organization=req.get('organization', None),
+            is_active=True,
+            ))     
+        db.session.commit()
+    ret = {'access_token': ''}    
+    return ret, 200
 
 @app.route('/api/refresh', methods=['POST'])
 def refresh():
