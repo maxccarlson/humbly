@@ -99,7 +99,22 @@ class Request(db.Model):
     create_date = db.Column(db.Date)
     update_date = db.Column(db.Date)
     
-    
+    @property
+    def meta(self):
+        return {
+            "id: " : self.id,
+            "organization: " : self.organization,
+            "req_user_id: " : self.req_user_id,
+            "title: " : self.title,
+            "description: " : self.description,
+            "cost: " : self.cost,
+            "cost_is_estimated: " : self.cost_is_estimated,
+            "type: " : self.type,
+            "status: " : self.status,
+            "create_date: " : self.create_date,
+            "update_date: " : self.update_date,
+
+        }
 
 # Initialize flask app for the example
 app = flask.Flask(__name__, static_folder='../build', static_url_path=None)
@@ -140,6 +155,12 @@ with app.app_context():
         db.session.add(AllowList(
           organization='TEST',
           user_id=1,
+		))
+    if db.session.query(Request).filter_by(title='Test').count() < 1:
+        db.session.add(Request(
+          req_user_id=1,
+          organization='TEST',
+          title='Test'
 		))
     db.session.commit()
 
@@ -231,6 +252,18 @@ def protected():
          -H "Authorization: Bearer <your_token>"
     """
     return {"message": f'protected endpoint (allowed user {flask_praetorian.current_user().username})'}
+
+@app.route('/api/my_requests', methods=['POST'])
+@flask_praetorian.auth_required
+def my_requests():
+    user = flask_praetorian.current_user()
+    requests =  db.session.query(Request).filter_by(req_user_id=user.id)
+    request_list = []    
+    for e in requests:
+        request_list.append(e.meta)
+    #print(request_list)   
+    ret = {'requests':request_list}    
+    return ret,200
 
 @app.route('/api/create_request', methods=['POST'])
 @flask_praetorian.auth_required

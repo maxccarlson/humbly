@@ -10,6 +10,7 @@ import {
   Link
 } from "react-router-dom";
 import {login, authFetch, useAuth, logout} from "./auth";
+import { render } from '@testing-library/react';
 
 
 const PrivateRoute = ({ component: Component, ...rest }) => {
@@ -26,8 +27,7 @@ class App extends Component {
 
   constructor(props) {
     super(props);
-    this.state = {
-      requestList: [],
+    this.state = {      
       modal: false
     }
   }
@@ -46,10 +46,6 @@ class App extends Component {
         </main>    
       ); 
     }            
-  
-  renderList = () => {
-    
-  }
 
   toggle = () => {  
     this.setState({ modal: !this.state.modal });
@@ -87,7 +83,7 @@ function InnerApp() {
     setModal(!modal);
   }  
 
-  const handleRegister = (item) => {
+  const handleCreate = (item) => {
     toggle();
     authFetch('api/create_request', {
       method:'post',
@@ -100,8 +96,8 @@ function InnerApp() {
     //     setErrorMessage('')     
     // }) ;
   };
-
-
+  
+  
   if(logged){
     return(    
       <div>             
@@ -112,22 +108,9 @@ function InnerApp() {
           >
             New Request
           </button>
-        </div>
-        <table className="table">
-          <thead>
-            <tr>
-              <th scope="col">Request ID</th>                  
-              <th scope="col">Requester</th>
-              <th scope="col">Description</th>
-              <th scope="col">Cost</th>
-              <th scope="col">Urgency</th>
-              <th scope="col">State</th>
-            </tr>
-          </thead>
-          <tbody>
-            {App.renderList}
-          </tbody>
-        </table>          
+        </div>        
+        {<RequestList/>
+        }
         <Login/> 
         {modal ? (
               <Modal
@@ -136,7 +119,7 @@ function InnerApp() {
                   password: "",
                   organization: "TEST"}}
                 toggle={toggle}
-                onSave={handleRegister}
+                onSave={handleCreate}
               />
       ) : null}              
       </div>                     
@@ -147,6 +130,86 @@ function InnerApp() {
 
 function Home() {
   return <h2>Home</h2>;
+}
+
+class RequestList extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      requestList: []  ,
+      mystring:''    
+    }
+  }
+
+  componentDidMount() {    
+    authFetch('api/my_requests', {
+      method:'post',
+    })    
+    .then(r => r.json())
+    .then(ret => {      
+      this.setState({requestList : JSON.stringify(ret.requests)})  
+      var thisstring = ''  
+      let list = this.state.requestList
+      console.log("this=" + list)
+      for (var item in list)
+      {        
+        //console.log("item=" + list[item])
+        thisstring = thisstring + '"' +
+        (<tr key={item.id}>        
+          <th scope="row">{item.id}</th>
+          <td>{item.organization}</td>
+          <td>{item.req_user_id}</td>
+          <td>{item.title}</td>
+          <td>{item.description}</td>
+          <td>{item.type}</td>
+          <td>{item.status}</td>
+          <td>{item.create_date}</td>
+            
+          <td>
+            <button
+              className="btn btn-secondary mr-2"
+              //onClick={() => this.editItem(item)}
+            >Edit
+            </button>
+          </td>
+          <td>
+            <button
+              className="btn btn-danger"
+              //onClick={() => this.handleDelete(item)}
+            >Delete
+            </button>
+          </td>          
+        </tr>) + '"'
+      }
+      
+      this.setState({mystring : thisstring})
+
+
+    })
+  }
+  
+
+
+  render(){ 
+    return (
+      <table className="table">
+        <thead>
+          <tr>
+            <th scope="col">Request ID</th>                  
+            <th scope="col">Requester</th>
+            <th scope="col">Description</th>
+            <th scope="col">Cost</th>
+            <th scope="col">Urgency</th>
+            <th scope="col">State</th>
+          </tr>
+        </thead>
+        <tbody>    
+          {this.state.mystring
+          }        
+        </tbody>
+      </table> 
+  )
+  }
 }
 
 function Login() {
