@@ -10,6 +10,7 @@ import {
   Link
 } from "react-router-dom";
 import {login, authFetch, useAuth, logout} from "./auth";
+import {Card} from "reactstrap";
 import { render } from '@testing-library/react';
 
 
@@ -137,52 +138,64 @@ class RequestList extends Component {
     super(props);
     this.state = {
       requestList: []  ,
-      mystring:''    
+      cards: []    
     }
   }
 
   componentDidMount() {    
     authFetch('api/my_requests', {
-      method:'post',
+      method:'get',
     })    
     .then(r => r.json())
     .then(ret => {      
-      this.setState({requestList : JSON.stringify(ret.requests)})  
-      var thisstring = ''  
+      this.setState({requestList : ret.requests})  
+      var cards = []
       let list = this.state.requestList
-      console.log("this=" + list)
-      for (var item in list)
+      for (let e in list)
       {        
-        //console.log("item=" + list[item])
-        thisstring = thisstring + '"' +
-        (<tr key={item.id}>        
-          <th scope="row">{item.id}</th>
-          <td>{item.organization}</td>
-          <td>{item.req_user_id}</td>
-          <td>{item.title}</td>
-          <td>{item.description}</td>
-          <td>{item.type}</td>
-          <td>{item.status}</td>
-          <td>{item.create_date}</td>
+        var r = list[e]
+        console.log("item=" + r.title)
+
+        cards.push(          
+          <Card>
+            <Card.Header>Header</Card.Header>
+            <Card.Body>
+              <Card.Title>r.title</Card.Title>
+              <Card.Text>r.description</Card.Text>
+            </Card.Body>
+          </Card>
+        )
+        
+        // (<tr key={r.id}>        
+        //   <th scope="row">{r.id}</th>
+        //   <td>{r.organization}</td>
+        //   <td>{r.req_user_id}</td>
+        //   <td>{r.title}</td>
+        //   <td>{r.description}</td>
+        //   <td>{r.type}</td>
+        //   <td>{r.status}</td>
+        //   <td>{r.create_date}</td>
             
-          <td>
-            <button
-              className="btn btn-secondary mr-2"
-              //onClick={() => this.editItem(item)}
-            >Edit
-            </button>
-          </td>
-          <td>
-            <button
-              className="btn btn-danger"
-              //onClick={() => this.handleDelete(item)}
-            >Delete
-            </button>
-          </td>          
-        </tr>) + '"'
+        //   <td>
+        //     <button
+        //       className="btn btn-secondary mr-2"
+        //       //onClick={() => this.editItem(item)}
+        //     >Edit
+        //     </button>
+        //   </td>
+        //   <td>
+        //     <button
+        //       className="btn btn-danger"
+        //       //onClick={() => this.handleDelete(item)}
+        //     >Delete
+        //     </button>
+        //   </td>          
+        // </tr>) + '"'
       }
+
+
       
-      this.setState({mystring : thisstring})
+      this.setState({cards : cards})
 
 
     })
@@ -204,7 +217,7 @@ class RequestList extends Component {
           </tr>
         </thead>
         <tbody>    
-          {this.state.mystring
+          {this.state.cards
           }        
         </tbody>
       </table> 

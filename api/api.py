@@ -102,17 +102,17 @@ class Request(db.Model):
     @property
     def meta(self):
         return {
-            "id: " : self.id,
-            "organization: " : self.organization,
-            "req_user_id: " : self.req_user_id,
-            "title: " : self.title,
-            "description: " : self.description,
-            "cost: " : self.cost,
-            "cost_is_estimated: " : self.cost_is_estimated,
-            "type: " : self.type,
-            "status: " : self.status,
-            "create_date: " : self.create_date,
-            "update_date: " : self.update_date,
+            "id" : self.id,
+            "organization" : self.organization,
+            "req_user_id" : self.req_user_id,
+            "title" : self.title,
+            "description" : self.description,
+            "cost" : self.cost,
+            "cost_is_estimated" : self.cost_is_estimated,
+            "type" : self.type,
+            "status" : self.status,
+            "create_date" : self.create_date,
+            "update_date" : self.update_date,
 
         }
 
@@ -156,12 +156,19 @@ with app.app_context():
           organization='TEST',
           user_id=1,
 		))
-    if db.session.query(Request).filter_by(title='Test').count() < 1:
-        db.session.add(Request(
-          req_user_id=1,
-          organization='TEST',
-          title='Test'
-		))
+    
+    db.session.add(Request(
+        req_user_id=1,
+        organization='TEST',
+        title='Test',
+        description='desc'
+    ))
+    db.session.add(Request(
+        req_user_id=1,
+        organization='TEST',
+        title='Test2',
+        description='aijfe'
+    ))
     db.session.commit()
 
 
@@ -253,7 +260,7 @@ def protected():
     """
     return {"message": f'protected endpoint (allowed user {flask_praetorian.current_user().username})'}
 
-@app.route('/api/my_requests', methods=['POST'])
+@app.route('/api/my_requests', methods=['GET'])
 @flask_praetorian.auth_required
 def my_requests():
     user = flask_praetorian.current_user()
