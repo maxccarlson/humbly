@@ -92,8 +92,8 @@ class Request(db.Model):
     req_user_id = db.Column(db.Integer)
     title = db.Column(db.Text)
     description = db.Column(db.Text)
-    cost = db.Column(db.Numeric)
-    cost_is_estimated = db.Column(db.Boolean)
+    cost = db.Column(db.Float)
+    cost_is_estimate = db.Column(db.Boolean)
     type = db.Column(db.Text)
     status = db.Column(db.Text)    
     create_date = db.Column(db.Date)
@@ -108,7 +108,7 @@ class Request(db.Model):
             "title" : self.title,
             "description" : self.description,
             "cost" : self.cost,
-            "cost_is_estimated" : self.cost_is_estimated,
+            "cost_is_estimate" : self.cost_is_estimate,
             "type" : self.type,
             "status" : self.status,
             "create_date" : self.create_date,
@@ -157,18 +157,23 @@ with app.app_context():
           user_id=1,
 		))
     
-    db.session.add(Request(
-        req_user_id=1,
-        organization='TEST',
-        title='Test',
-        description='desc'
-    ))
-    db.session.add(Request(
-        req_user_id=1,
-        organization='TEST',
-        title='Test2',
-        description='aijfe'
-    ))
+    # db.session.add(Request(
+    #     req_user_id=1,
+    #     organization='TEST',
+    #     title='Test',
+    #     description='desc',
+    #     cost=0.0,
+    #     cost_is_estimate=False
+    # ))
+    # db.session.add(Request(
+    #     req_user_id=1,
+    #     organization='TEST',
+    #     title='Test2',
+    #     description='aijfe',
+    #     cost=15,
+    #     cost_is_estimate=True
+    # ))
+    
     db.session.commit()
 
 
@@ -272,6 +277,13 @@ def my_requests():
     ret = {'requests':request_list}    
     return ret,200
 
+def is_float(num):
+    try:
+        float(num)
+        return True
+    except ValueError:
+        return False
+
 @app.route('/api/create_request', methods=['POST'])
 @flask_praetorian.auth_required
 def create_request():    
@@ -281,7 +293,7 @@ def create_request():
     cost = req.get('cost')
     type = "Normal"        
 
-    if not cost.isdecimal():
+    if not is_float(cost):
         ret = {'failure': 'Cost must be a decimal value'}  
         return ret, 200
 
@@ -303,15 +315,15 @@ def create_request():
         db.session.commit()
 
     reqs = db.session.query(Request).all()
-    for req in reqs:
-        print(req.organization)
-        print(req.req_user_id)
-        print(req.title)
-        print(req.description)
-        print(req.cost)
-        print(req.type)
-        print(req.status)
-        print(req.create_date)
+    for reqq in reqs:
+        print(reqq.organization)
+        print(reqq.req_user_id)
+        print(reqq.title)
+        print(reqq.description)
+        print(reqq.cost)
+        print(reqq.type)
+        print(reqq.status)
+        print(reqq.create_date)
 
     # users = db.session.query(User).all()
     # for user in users:

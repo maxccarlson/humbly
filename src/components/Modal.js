@@ -69,7 +69,7 @@ export default class CustomModal extends Component {
               />
             </FormGroup>
             <FormGroup>
-              <Label for="request-estimate">Cost is Estimate</Label>
+              <Label for="request-estimate">Cost is Estimate  </Label>
               <Input
                   type="checkbox"
                   id="request-estimate"
@@ -79,7 +79,7 @@ export default class CustomModal extends Component {
               />
             </FormGroup>
             <FormGroup>
-              <Label for="request-urgent">Urgent</Label>
+              <Label for="request-urgent">Urgent  </Label>
               <Input
                   type="checkbox"
                   id="request-urgent"

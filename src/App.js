@@ -10,7 +10,7 @@ import {
   Link
 } from "react-router-dom";
 import {login, authFetch, useAuth, logout} from "./auth";
-import {Card} from "reactstrap";
+import Card from "reactstrap";
 import { render } from '@testing-library/react';
 
 
@@ -72,7 +72,10 @@ class App extends Component {
 }
 
 function InnerApp() {
-  const [modal, setModal] = useState('')
+  const [modal, setModal] = useState('') 
+  const [requestList, setRequestList] = useState([])  
+  const [cards, setCards] = useState([])  
+  const [refreshed, setRefreshed] = useState(false)
   
   const [logged] = useAuth();  
 
@@ -81,100 +84,52 @@ function InnerApp() {
   }
 
   const toggle = () => {  
-    setModal(!modal);
+    setModal(!modal);            
   }  
 
-  const handleCreate = (item) => {
-    toggle();
+  const handleCreate = (item) => {    
     authFetch('api/create_request', {
       method:'post',
       body: JSON.stringify(item)
-    }).then(r => r.json())
+    })
+
+    // .then(r => {      
+    //   r.json()      
+    // })
     // .then(ret => {
     //   if (ret.failure > '')
     //     setErrorMessage(ret.failure)     
     //   else
     //     setErrorMessage('')     
     // }) ;
+    toggle();    
   };
   
-  
-  if(logged){
-    return(    
-      <div>             
-        <div className="mb-4">
-          <button
-            className="btn btn-primary"
-            onClick={onCreateRequest}
-          >
-            New Request
-          </button>
-        </div>        
-        {<RequestList/>
-        }
-        <Login/> 
-        {modal ? (
-              <Modal
-                activeItem={{
-                  username: "",
-                  password: "",
-                  organization: "TEST"}}
-                toggle={toggle}
-                onSave={handleCreate}
-              />
-      ) : null}              
-      </div>                     
-    );      
-  }
-  else return <Login />
-}
-
-function Home() {
-  return <h2>Home</h2>;
-}
-
-class RequestList extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      requestList: []  ,
-      cards: []    
-    }
-  }
-
-  componentDidMount() {    
+  const refreshList = () => {
+    console.log("REFRESH")
     authFetch('api/my_requests', {
       method:'get',
     })    
     .then(r => r.json())
     .then(ret => {      
-      this.setState({requestList : ret.requests})  
+      setRequestList(ret.requests)  
       var cards = []
-      let list = this.state.requestList
+      let list = requestList
       for (let e in list)
       {        
-        var r = list[e]
-        console.log("item=" + r.title)
-
+        let r = list[e]
+        let cost = r.cost_is_estimate ? (String("$" + r.cost + " (Est.)")) : String("$" + r.cost)
+        let date = (r.create_date != null) ? r.create_date.split(' ')[1] + " " + r.create_date.split(' ')[2] + " " + r.create_date.split(' ')[3] : ""
         cards.push(          
-          <Card>
-            <Card.Header>Header</Card.Header>
-            <Card.Body>
-              <Card.Title>r.title</Card.Title>
-              <Card.Text>r.description</Card.Text>
-            </Card.Body>
-          </Card>
-        )
-        
-        // (<tr key={r.id}>        
-        //   <th scope="row">{r.id}</th>
-        //   <td>{r.organization}</td>
-        //   <td>{r.req_user_id}</td>
-        //   <td>{r.title}</td>
-        //   <td>{r.description}</td>
-        //   <td>{r.type}</td>
-        //   <td>{r.status}</td>
-        //   <td>{r.create_date}</td>
+          <tr key={r.id}>
+            <th scope="row">{r.title}</th>          
+            <td>{r.description}</td>
+            <td>{cost}</td>
+            <td>{r.status}</td>
+            <td style={{fontSize:"10px"}}>{date}</td>
+          </tr>         
+
+        )       
             
         //   <td>
         //     <button
@@ -192,37 +147,72 @@ class RequestList extends Component {
         //   </td>          
         // </tr>) + '"'
       }
-
-
       
-      this.setState({cards : cards})
-
+      setCards(cards)
+      setRefreshed(true)
 
     })
   }
   
+  if(logged){    
+    if(!refreshed)
+    {
+      refreshList()      
+    }
+    return(    
+      <div>             
+        <div className="mb-4">
+          <button
+            className="btn btn-primary"
+            onClick={onCreateRequest}
+          >
+            New Request
+          </button>
+        </div>        
+          <button 
+            //className="btn btn-secondary"
+            onClick={refreshList}>
+              Refresh List
+          </button>
 
-
-  render(){ 
-    return (
-      <table className="table">
-        <thead>
-          <tr>
-            <th scope="col">Request ID</th>                  
-            <th scope="col">Requester</th>
-            <th scope="col">Description</th>
-            <th scope="col">Cost</th>
-            <th scope="col">Urgency</th>
-            <th scope="col">State</th>
-          </tr>
-        </thead>
-        <tbody>    
-          {this.state.cards
-          }        
-        </tbody>
-      </table> 
-  )
+        <table className="table">
+          <caption style={{captionSide:"top"}}>My Requests</caption>
+          <thead>
+            {/* <tr>
+              <th scope="col">Title</th>                              
+              <th scope="col">Description</th>
+              <th scope="col">Cost</th>            
+              <th scope="col">State</th>
+            </tr> */}
+          </thead>
+          <tbody>    
+            {cards
+            }        
+          </tbody>
+        </table> 
+              
+        <Login/> 
+        {modal ? (
+              <Modal
+                activeItem={{
+                  title: "",
+                  description: "",
+                  cost: 0,
+                  request_is_estimate: false,
+                  urgent: false
+                  }}
+                toggle={toggle}
+                onSave={handleCreate}
+              />
+      ) : null}              
+      </div>                     
+    );      
   }
+  else return <Login />
+}
+
+function Home() {
+  return <h2>Home</h2>;
 }
 
 function Login() {
@@ -310,8 +300,8 @@ function Login() {
         <div style={{padding: '3px'}}></div>
         {errorMessage && <div style={{color:"red"}} className="error"> {errorMessage} </div>}
         <div style={{padding: '3px'}}></div>
-        <button className="btn btn-secondary mr-2" onClick={onSubmitClick} type="submit">
-          Sign In
+        <button className="btn btn-primary mr-2" onClick={onSubmitClick} type="submit">
+          Submit
         </button>        
       </form>    
       <div style={{padding: '3px'}}></div>
