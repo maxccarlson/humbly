@@ -332,6 +332,26 @@ def create_request():
     ret = {'access_token': ''}  
     return ret, 200
 
+@app.route('/api/delete_request', methods=['POST'])
+def delete_request():    
+    
+    req = flask.request.get_json(force=True)    
+    id = req.get('id')    
+
+    with app.app_context():
+        qry = db.session.query(Request).filter_by(id=id)
+        print("QUERY")
+        print(qry)
+        qry.delete()  
+        db.session.commit()
+
+    # users = db.session.query(User).all()
+    # for user in users:
+    #     print(user.meta)
+    
+    ret = {'access_token': ''}  
+    return ret, 200
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def catch_all(path):

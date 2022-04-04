@@ -9,10 +9,18 @@ import {
   Redirect,
   Link
 } from "react-router-dom";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  QueryClient,
+  QueryClientProvider,
+} from 'react-query';
 import {login, authFetch, useAuth, logout} from "./auth";
 import Card from "reactstrap";
 import { render } from '@testing-library/react';
 
+const queryClient = new QueryClient()
 
 const PrivateRoute = ({ component: Component, ...rest }) => {
   const [logged] = useAuth();
@@ -24,60 +32,55 @@ const PrivateRoute = ({ component: Component, ...rest }) => {
   )} />
 }
 
-class App extends Component {
-
-  constructor(props) {
-    super(props);
-    this.state = {      
-      modal: false
-    }
-  }
-
-  render() {           
-      return (   
-        <main className="container">
-        <div style={{padding: '3px'}}></div>
-        <h1 className="text-lowercase text-center my-4">humbly</h1>                        
-        <div className="row">
-          <div style={{ width: "auto"}} className="col-md-6 col-sm-10 mx-auto p-0">                        
-            <h2 className="mb-5">Request Management</h2>
-              <InnerApp />
-          </div>
-        </div>            
-        </main>    
-      ); 
-    }            
-
-  toggle = () => {  
-    this.setState({ modal: !this.state.modal });
-  }  
-
-  handleRegister = (item) => {
-    this.toggle();
-
-    /*
-    if (item.requestNumber) {
-      axios
-        .put(`/api/humbly/${item.requestNumber}/`, item)
-        .then((res) => this.refreshList());
-      return;
-    }
-    item.requestNumber = "1";
-    axios
-      .post("/api/humbly/", item)
-      .then((res) => this.refreshList());
-      */
-  };
+function App () {
+                   
+  return (   
+    <main className="container">
+    <div style={{padding: '3px'}}></div>
+    <h1 className="text-lowercase text-center my-4">humbly</h1>                        
+    <div className="row">
+      <div style={{ width: "auto"}} className="col-md-6 col-sm-10 mx-auto p-0">                        
+        <h2 className="mb-5">Request Management</h2>
+        <QueryClientProvider client={queryClient}>
+          <InnerApp />
+        </QueryClientProvider>          
+      </div>
+    </div>            
+    </main>    
+  );                 
 
 }
 
+const refreshMyList = () => {  
+  const ret = 
+  authFetch('api/my_requests', {
+    method:'get',
+  })
+  .then(r => r.json())
+  .then(rt => {
+    rt = rt.requests
+    return rt;
+  }
+  );  
+  
+  return ret;
+}
+
 function InnerApp() {
-  const [modal, setModal] = useState('') 
-  const [requestList, setRequestList] = useState([])  
-  const [cards, setCards] = useState([])  
+  const [modal, setModal] = useState(false) 
   const [refreshed, setRefreshed] = useState(false)
   
   const [logged] = useAuth();  
+  const { status, data, error } = useQuery('requests', refreshMyList)
+
+  const mutation = useMutation(newRequest => {
+
+    return authFetch('api/create_request', {
+      method:'post',
+      body: JSON.stringify(newRequest)
+    })
+
+  })
 
   const onCreateRequest = () => {
     toggle();
@@ -88,77 +91,21 @@ function InnerApp() {
   }  
 
   const handleCreate = (item) => {    
-    authFetch('api/create_request', {
+    
+    mutation.mutate(item)
+    toggle()    
+
+  };
+
+  const handleDelete = (item) => {
+    fetch('api/delete_request', {
       method:'post',
       body: JSON.stringify(item)
-    })
-
-    // .then(r => {      
-    //   r.json()      
-    // })
-    // .then(ret => {
-    //   if (ret.failure > '')
-    //     setErrorMessage(ret.failure)     
-    //   else
-    //     setErrorMessage('')     
-    // }) ;
-    toggle();    
-  };
-  
-  const refreshList = () => {
-    console.log("REFRESH")
-    authFetch('api/my_requests', {
-      method:'get',
-    })    
-    .then(r => r.json())
-    .then(ret => {      
-      setRequestList(ret.requests)  
-      var cards = []
-      let list = requestList
-      for (let e in list)
-      {        
-        let r = list[e]
-        let cost = r.cost_is_estimate ? (String("$" + r.cost + " (Est.)")) : String("$" + r.cost)
-        let date = (r.create_date != null) ? r.create_date.split(' ')[1] + " " + r.create_date.split(' ')[2] + " " + r.create_date.split(' ')[3] : ""
-        cards.push(          
-          <tr key={r.id}>
-            <th scope="row">{r.title}</th>          
-            <td>{r.description}</td>
-            <td>{cost}</td>
-            <td>{r.status}</td>
-            <td style={{fontSize:"10px"}}>{date}</td>
-          </tr>         
-
-        )       
-            
-        //   <td>
-        //     <button
-        //       className="btn btn-secondary mr-2"
-        //       //onClick={() => this.editItem(item)}
-        //     >Edit
-        //     </button>
-        //   </td>
-        //   <td>
-        //     <button
-        //       className="btn btn-danger"
-        //       //onClick={() => this.handleDelete(item)}
-        //     >Delete
-        //     </button>
-        //   </td>          
-        // </tr>) + '"'
-      }
-      
-      setCards(cards)
-      setRefreshed(true)
-
-    })
+    }).then(setRefreshed(false))
   }
   
   if(logged){    
-    if(!refreshed)
-    {
-      refreshList()      
-    }
+
     return(    
       <div>             
         <div className="mb-4">
@@ -168,13 +115,8 @@ function InnerApp() {
           >
             New Request
           </button>
-        </div>        
-          <button 
-            //className="btn btn-secondary"
-            onClick={refreshList}>
-              Refresh List
-          </button>
-
+        </div>                  
+        {/* <p>{status}</p>   */}
         <table className="table">
           <caption style={{captionSide:"top"}}>My Requests</caption>
           <thead>
@@ -186,7 +128,23 @@ function InnerApp() {
             </tr> */}
           </thead>
           <tbody>    
-            {cards
+            {typeof(data) !== 'undefined' ?               
+            data.map((r) => (
+              <tr key={r.id}>
+              <th scope="row">{r.title}</th>          
+              <td>{r.description}</td>
+              <td>{r.cost_is_estimate ? (String("$" + r.cost + " (Est.)")) : String("$" + r.cost)}</td>
+              <td>{r.status}</td>
+              <td style={{fontSize:"10px"}}>{(r.create_date != null) ? r.create_date.split(' ')[1] + " " + r.create_date.split(' ')[2] + " " + r.create_date.split(' ')[3] : ""}</td>
+              <td>
+                <button
+                  className="btn btn-danger"
+                  onClick={() => handleDelete(r)}
+                  >Delete
+                </button>
+              </td> 
+            </tr>
+            )) : null
             }        
           </tbody>
         </table> 
@@ -209,10 +167,6 @@ function InnerApp() {
     );      
   }
   else return <Login />
-}
-
-function Home() {
-  return <h2>Home</h2>;
 }
 
 function Login() {
@@ -324,28 +278,6 @@ function Login() {
       ) : null}
 
     </div>
-  )
-}
-
-
-function Secret() {
-  const [message, setMessage] = useState('')
-
-  useEffect(() => {
-    authFetch("/api/protected").then(response => {
-      if (response.status === 401){
-        setMessage("Sorry you aren't authorized!")
-        return null
-      }
-      return response.json()
-    }).then(response => {
-      if (response && response.message){
-        setMessage(response.message)
-      }
-    })
-  }, [])
-  return (
-    <h2>Secret: {message}</h2>
   )
 }
 
