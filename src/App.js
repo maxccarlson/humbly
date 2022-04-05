@@ -67,56 +67,69 @@ const refreshMyList = () => {
 }
 
 function InnerApp() {
-  const [modal, setModal] = useState(false) 
-  const [refreshed, setRefreshed] = useState(false)
-  
+  const [modal, setModal] = useState(false)   
   const [logged] = useAuth();  
   const { status, data, error } = useQuery('requests', refreshMyList)
 
-  const mutation = useMutation(newRequest => {
-
+  const deleteMutation = useMutation(delRequest => {
+    return fetch('api/delete_request', {
+      method:'post',
+      body: JSON.stringify(delRequest)
+    })
+  });
+  
+  const createMutation = useMutation(newRequest => {
     return authFetch('api/create_request', {
       method:'post',
       body: JSON.stringify(newRequest)
     })
+  });
 
-  })
+  
 
-  const onCreateRequest = () => {
+  const onSave = (r) => {
+    createMutation.mutate(r)
+    toggle()
+  }
+
+  const onClickDelete = (r) => {
+    deleteMutation.mutate(r)
+  }
+
+  const onClickCreate = (r) => {
     toggle();
+  }
+
+  const onClickRefresh = () => {
+    console.log(data);
   }
 
   const toggle = () => {  
     setModal(!modal);            
   }  
 
-  const handleCreate = (item) => {    
-    
-    mutation.mutate(item)
-    toggle()    
-
-  };
-
-  const handleDelete = (item) => {
-    fetch('api/delete_request', {
-      method:'post',
-      body: JSON.stringify(item)
-    }).then(setRefreshed(false))
-  }
-  
-  if(logged){    
+  if(logged){        
 
     return(    
       <div>             
         <div className="mb-4">
           <button
             className="btn btn-primary"
-            onClick={onCreateRequest}
+            onClick={onClickCreate}
           >
             New Request
           </button>
-        </div>                  
-        {/* <p>{status}</p>   */}
+          
+        </div>     
+        <button
+            className="btn btn-secondary"
+            onClick={onClickRefresh}
+          >
+            Refresh
+          </button>
+        {/* <p>{status}</p>                     
+        <p>{error}</p>   */}
+        {createMutation.isSuccess ? <div>Request added!</div> : null}                   
         <table className="table">
           <caption style={{captionSide:"top"}}>My Requests</caption>
           <thead>
@@ -139,7 +152,7 @@ function InnerApp() {
               <td>
                 <button
                   className="btn btn-danger"
-                  onClick={() => handleDelete(r)}
+                  onClick={onClickDelete(r)}
                   >Delete
                 </button>
               </td> 
@@ -160,7 +173,7 @@ function InnerApp() {
                   urgent: false
                   }}
                 toggle={toggle}
-                onSave={handleCreate}
+                onSave={onSave}
               />
       ) : null}              
       </div>                     

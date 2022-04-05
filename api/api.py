@@ -339,9 +339,7 @@ def delete_request():
     id = req.get('id')    
 
     with app.app_context():
-        qry = db.session.query(Request).filter_by(id=id)
-        print("QUERY")
-        print(qry)
+        qry = db.session.query(Request).filter_by(id=id)        
         qry.delete()  
         db.session.commit()
 
