@@ -89,6 +89,7 @@ class User(db.Model):
 class Request(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     organization = db.Column(db.Text)
+    req_user = db.Column(db.Text)
     req_user_id = db.Column(db.Integer)
     title = db.Column(db.Text)
     description = db.Column(db.Text)
@@ -104,6 +105,7 @@ class Request(db.Model):
         return {
             "id" : self.id,
             "organization" : self.organization,
+            "req_user" : self.req_user,
             "req_user_id" : self.req_user_id,
             "title" : self.title,
             "description" : self.description,
@@ -246,7 +248,6 @@ def refresh():
        $ curl http://localhost:5000/refresh -X GET \
          -H "Authorization: Bearer <your_token>"
     """
-    print("refresh request")
     old_token = request.get_data()
     new_token = guard.refresh_jwt_token(old_token)
     ret = {'access_token': new_token}
@@ -269,12 +270,24 @@ def protected():
 @flask_praetorian.auth_required
 def my_requests():
     user = flask_praetorian.current_user()
-    requests =  db.session.query(Request).filter_by(req_user_id=user.id)
+    
     request_list = []    
+    if(user.roles == "admin"):
+        requests =  db.session.query(Request).filter_by(organization=user.organization)
+    else:
+        requests =  db.session.query(Request).filter_by(req_user_id=user.id)    
+    
     for e in requests:
         request_list.append(e.meta)
-    #print(request_list)   
+        
     ret = {'requests':request_list}    
+    return ret,200
+
+@app.route('/api/my_roles', methods=['GET'])
+@flask_praetorian.auth_required
+def my_roles():
+    user = flask_praetorian.current_user()            
+    ret = {'roles':user.roles}    
     return ret,200
 
 def is_float(num):
@@ -292,6 +305,7 @@ def create_request():
     req = flask.request.get_json(force=True)    
     cost = req.get('cost')
     type = "Normal"        
+    reqid = req.get('id')
 
     if not is_float(cost):
         ret = {'failure': 'Cost must be a decimal value'}  
@@ -300,30 +314,42 @@ def create_request():
     if req.get('urgent'):
         type = "Urgent"
 
-    with app.app_context():
-        db.session.add(Request(
-                organization = user.organization,
-                req_user_id = user.id,
-                title = req.get('title', None),
-                description = req.get('description', None),
-                cost = cost,
-                type = type,
-                status = "Pending",
-                create_date = date.today(),
-                update_date = date.today()
-            ))     
-        db.session.commit()
+    
 
-    reqs = db.session.query(Request).all()
-    for reqq in reqs:
-        print(reqq.organization)
-        print(reqq.req_user_id)
-        print(reqq.title)
-        print(reqq.description)
-        print(reqq.cost)
-        print(reqq.type)
-        print(reqq.status)
-        print(reqq.create_date)
+    with app.app_context():
+        if(reqid == None):        
+            db.session.add(Request(
+                    organization = user.organization,
+                    req_user = user.username,
+                    req_user_id = user.id,                    
+                    title = req.get('title', None),
+                    description = req.get('description', None),
+                    cost = cost,
+                    type = type,
+                    status = "Pending",
+                    create_date = date.today(),
+                    update_date = date.today()
+                ))     
+            db.session.commit()        
+        else:        
+            this_request = db.session.query(Request).filter_by(id=reqid).first()
+            this_request.title = req.get('title', None)
+            this_request.description = req.get('description', None)
+            this_request.cost = cost
+            this_request.type = type
+            this_request.update_date = date.today()
+            db.session.commit()
+
+    # reqs = db.session.query(Request).all()
+    # for reqq in reqs:
+    #     print(reqq.organization)
+    #     print(reqq.req_user_id)
+    #     print(reqq.title)
+    #     print(reqq.description)
+    #     print(reqq.cost)
+    #     print(reqq.type)
+    #     print(reqq.status)
+    #     print(reqq.create_date)
 
     # users = db.session.query(User).all()
     # for user in users:
@@ -337,7 +363,6 @@ def delete_request():
     
     req = flask.request.get_json(force=True)    
     id = req.get('id')    
-
     with app.app_context():
         qry = db.session.query(Request).filter_by(id=id)        
         qry.delete()  

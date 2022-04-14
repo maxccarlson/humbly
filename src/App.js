@@ -40,7 +40,7 @@ function App () {
     <h1 className="text-lowercase text-center my-4">humbly</h1>                        
     <div className="row">
       <div style={{ width: "auto"}} className="col-md-6 col-sm-10 mx-auto p-0">                        
-        <h2 className="mb-5">Request Management</h2>
+        <h2 className="mb-5 text-center">Request Management</h2>
         <QueryClientProvider client={queryClient}>
           <InnerApp />
         </QueryClientProvider>          
@@ -51,8 +51,10 @@ function App () {
 
 }
 
-const refreshMyList = () => {  
-  const ret = 
+
+
+const refreshMyList = async () => {  
+  const ret = await
   authFetch('api/my_requests', {
     method:'get',
   })
@@ -67,25 +69,29 @@ const refreshMyList = () => {
 }
 
 function InnerApp() {
-  const [modal, setModal] = useState(false)   
-  const [logged] = useAuth();  
-  const { status, data, error } = useQuery('requests', refreshMyList)
+  const [modal, setModal] = useState(false)  
+  const [roles, setRoles] = useState('')
+  const [activeItem, setActiveItem] = useState([])
+  const [logged] = useAuth();    
 
-  const deleteMutation = useMutation(delRequest => {
-    return fetch('api/delete_request', {
-      method:'post',
-      body: JSON.stringify(delRequest)
-    })
-  });
+
+  const { status, data, error } = useQuery('requests', refreshMyList)
+  const queryClient = useQueryClient()
   
+  const deleteMutation = useMutation(delRequest => {
+    return fetch('api/delete_request',
+           {method:'post',
+           body: JSON.stringify(delRequest)
+          })
+    }        
+  );
+
   const createMutation = useMutation(newRequest => {
     return authFetch('api/create_request', {
       method:'post',
       body: JSON.stringify(newRequest)
     })
-  });
-
-  
+  });  
 
   const onSave = (r) => {
     createMutation.mutate(r)
@@ -94,84 +100,154 @@ function InnerApp() {
 
   const onClickDelete = (r) => {
     deleteMutation.mutate(r)
+    // fetch('api/delete_request',
+    //        {method:'post',
+    //        body: JSON.stringify(r)
+    //       })
   }
 
-  const onClickCreate = (r) => {
+  const onClickCreate = () => {
+    setActiveItem({
+        title: "",
+        description: "",
+        cost: 0,
+        request_is_estimate: false,
+        urgent: false
+        });
     toggle();
   }
 
-  const onClickRefresh = () => {
-    console.log(data);
+  const onClickEdit = (r) => {
+    setActiveItem(r);
+    toggle();
   }
 
   const toggle = () => {  
     setModal(!modal);            
   }  
 
-  if(logged){        
+  const fetchRoles = () => {
+   authFetch('api/my_roles', {method:'get'})
+    .then(r => r.json())
+    .then(rl => {
+      rl = rl.roles
+      console.log(rl)
+      setRoles(rl)
+    })
+  }
 
+  useEffect(() => {
+    fetchRoles()
+  })
+  
+
+  if(logged){        
     return(    
       <div>             
-        <div className="mb-4">
+        <div className="row justify-content-center">
           <button
-            className="btn btn-primary"
+            className="btn btn-warning btn-lg"
+            style={{width:"30%"}}
             onClick={onClickCreate}
           >
             New Request
           </button>
           
         </div>     
-        <button
-            className="btn btn-secondary"
-            onClick={onClickRefresh}
-          >
-            Refresh
-          </button>
         {/* <p>{status}</p>                     
         <p>{error}</p>   */}
-        {createMutation.isSuccess ? <div>Request added!</div> : null}                   
-        <table className="table">
+        {/* {createMutation.isSuccess ? <div>Request added!</div> : null}               */}
+        <table className="table table-hover">
           <caption style={{captionSide:"top"}}>My Requests</caption>
-          <thead>
-            {/* <tr>
+          <thead className="thead-dark">
+            { <tr>
               <th scope="col">Title</th>                              
               <th scope="col">Description</th>
               <th scope="col">Cost</th>            
               <th scope="col">State</th>
-            </tr> */}
+              <th scope="col">Created</th>
+              {(roles == "admin") ? (
+                <th scope="col">User</th>
+              ) : null}
+            </tr> }
           </thead>
-          <tbody>    
+          <tbody>                
             {typeof(data) !== 'undefined' ?               
             data.map((r) => (
-              <tr key={r.id}>
-              <th scope="row">{r.title}</th>          
+              <tr key={r.id}>              
+              <th scope="row">{r.title}</th>                        
               <td>{r.description}</td>
               <td>{r.cost_is_estimate ? (String("$" + r.cost + " (Est.)")) : String("$" + r.cost)}</td>
               <td>{r.status}</td>
               <td style={{fontSize:"10px"}}>{(r.create_date != null) ? r.create_date.split(' ')[1] + " " + r.create_date.split(' ')[2] + " " + r.create_date.split(' ')[3] : ""}</td>
+              {(roles == "admin") ? (
+                <td style={{}}>{r.req_user}</td>
+              ) : null}
+              {(roles == "admin") ? (
+
+                <td>
+                  <button 
+                    className="btn btn-outline-success btn-sm"                                    
+                    // onClick={() => onClickEdit(r)}
+                    >Approve
+                  </button>                   
+                  <span style={{paddingRight: '4px'}}></span>
+                  <button 
+                    className="btn btn-outline-danger btn-sm"                                    
+                    // onClick={() => onClickDelete(r)}
+                    >Deny
+                  </button>
+                  <span style={{paddingRight: '4px'}}></span>
+                  <button                     
+                    className="btn btn-outline-primary btn-sm"                                    
+                    onClick={() => onClickEdit(r)}
+                    >Edit
+                  </button>
+                  <span style={{paddingRight: '4px'}}></span>
+                  <button 
+                    className="btn btn-outline-danger btn-sm"                                    
+                    onClick={() => onClickDelete(r)}
+                    //style={{color:"red"}}
+                    >X
+                  </button>
+                </td>
+
+              ) : (
+
               <td>
-                <button
-                  className="btn btn-danger"
-                  onClick={onClickDelete(r)}
-                  >Delete
-                </button>
-              </td> 
+                  <button                     
+                    className="btn btn-primary"                                    
+                    onClick={() => onClickEdit(r)}
+                    >Edit
+                  </button>
+
+                  <button 
+                    className="btn"                                    
+                    onClick={() => onClickDelete(r)}
+                    style={{color:"red"}}
+                    >X
+                  </button>
+              </td>  )
+              }
+                                         
             </tr>
             )) : null
             }        
           </tbody>
-        </table> 
-              
+          
+        </table>                     
+        
         <Login/> 
         {modal ? (
               <Modal
-                activeItem={{
-                  title: "",
-                  description: "",
-                  cost: 0,
-                  request_is_estimate: false,
-                  urgent: false
-                  }}
+                // activeItem={{
+                //   title: "",
+                //   description: "",
+                //   cost: 0,
+                //   request_is_estimate: false,
+                //   urgent: false
+                //   }}
+                activeItem={activeItem}
                 toggle={toggle}
                 onSave={onSave}
               />
@@ -276,7 +352,11 @@ function Login() {
         Create Account
       </button>
       </div>  
-      : <button className="btn btn-secondary mr-2" onClick={() => logout()}>
+      : <button style={{
+          position: 'absolute',
+          left: '35%',
+          bottom: '10%'
+        }} className="btn btn-secondary mr-2" onClick={() => logout()}>
         Sign Out
       </button>}
       {modal ? (
