@@ -79,19 +79,18 @@ function InnerApp() {
   const queryClient = useQueryClient()
   
   const deleteMutation = useMutation(delRequest => {
-    return fetch('api/delete_request',
-           {method:'post',
-           body: JSON.stringify(delRequest)
-          })
-    }        
-  );
+    return fetch('api/delete_request',{
+      method:'post',
+      body: JSON.stringify(delRequest)
+    })            
+  });
 
   const createMutation = useMutation(newRequest => {
     return authFetch('api/create_request', {
       method:'post',
       body: JSON.stringify(newRequest)
     })
-  });  
+  });   
 
   const onSave = (r) => {
     createMutation.mutate(r)
@@ -100,10 +99,6 @@ function InnerApp() {
 
   const onClickDelete = (r) => {
     deleteMutation.mutate(r)
-    // fetch('api/delete_request',
-    //        {method:'post',
-    //        body: JSON.stringify(r)
-    //       })
   }
 
   const onClickCreate = () => {
@@ -111,15 +106,29 @@ function InnerApp() {
         title: "",
         description: "",
         cost: 0,
-        request_is_estimate: false,
+        cost_is_estimate: false,
         urgent: false
         });
     toggle();
   }
 
   const onClickEdit = (r) => {
-    setActiveItem(r);
+    r.edit = true
+    r.urgent = (r.type === "Urgent")
+    setActiveItem(r);    
     toggle();
+  }
+
+  const onClickApprove = (r) => {
+    r.status = "Approved"
+    r.urgent = (r.type === "Urgent")
+    createMutation.mutate(r);
+  }
+
+  const onClickDeny = (r) => {
+    r.status = "Denied"
+    r.urgent = (r.type === "Urgent")
+    createMutation.mutate(r);
   }
 
   const toggle = () => {  
@@ -147,18 +156,19 @@ function InnerApp() {
         <div className="row justify-content-center">
           <button
             className="btn btn-warning btn-lg"
-            style={{width:"30%"}}
+            style={{width:"275px"}}
             onClick={onClickCreate}
           >
             New Request
           </button>
+          <span style={{paddingTop: '20px'}}></span>
           
         </div>     
         {/* <p>{status}</p>                     
         <p>{error}</p>   */}
         {/* {createMutation.isSuccess ? <div>Request added!</div> : null}               */}
         <table className="table table-hover">
-          <caption style={{captionSide:"top"}}>My Requests</caption>
+          <caption style={{captionSide:"top"}}>Requests</caption>
           <thead className="thead-dark">
             { <tr>
               <th scope="col">Title</th>                              
@@ -166,35 +176,36 @@ function InnerApp() {
               <th scope="col">Cost</th>            
               <th scope="col">State</th>
               <th scope="col">Created</th>
-              {(roles == "admin") ? (
+              {(roles === "admin") ? (
                 <th scope="col">User</th>
               ) : null}
             </tr> }
           </thead>
           <tbody>                
             {typeof(data) !== 'undefined' ?               
-            data.map((r) => (
-              <tr key={r.id}>              
-              <th scope="row">{r.title}</th>                        
+            data.map((r) => (              
+              <tr key={r.id}
+                className={(r.type === "Urgent") ? "table-danger" : "table-light"}
+              >                            
+              <th scope="row">{r.title}</th>               
               <td>{r.description}</td>
               <td>{r.cost_is_estimate ? (String("$" + r.cost + " (Est.)")) : String("$" + r.cost)}</td>
-              <td>{r.status}</td>
+              <td className={(r.status === "Approved") ? "table-success" : ((r.status === "Denied") ? "table-danger" : "table-light")}>{r.status}</td>
               <td style={{fontSize:"10px"}}>{(r.create_date != null) ? r.create_date.split(' ')[1] + " " + r.create_date.split(' ')[2] + " " + r.create_date.split(' ')[3] : ""}</td>
-              {(roles == "admin") ? (
+              {(roles === "admin") ? (
                 <td style={{}}>{r.req_user}</td>
               ) : null}
-              {(roles == "admin") ? (
-
+              {(roles === "admin") ? (
                 <td>
                   <button 
                     className="btn btn-outline-success btn-sm"                                    
-                    // onClick={() => onClickEdit(r)}
+                    onClick={() => onClickApprove(r)}
                     >Approve
                   </button>                   
                   <span style={{paddingRight: '4px'}}></span>
                   <button 
                     className="btn btn-outline-danger btn-sm"                                    
-                    // onClick={() => onClickDelete(r)}
+                    onClick={() => onClickDeny(r)}
                     >Deny
                   </button>
                   <span style={{paddingRight: '4px'}}></span>
@@ -216,19 +227,20 @@ function InnerApp() {
 
               <td>
                   <button                     
-                    className="btn btn-primary"                                    
+                    className="btn btn-outline-primary btn-sm"                                    
                     onClick={() => onClickEdit(r)}
                     >Edit
                   </button>
-
+                  <span style={{paddingRight: '4px'}}></span>
                   <button 
-                    className="btn"                                    
+                    className="btn btn-outline-danger btn-sm"                                    
                     onClick={() => onClickDelete(r)}
-                    style={{color:"red"}}
+                    //style={{color:"red"}}
                     >X
                   </button>
               </td>  )
               }
+              {(r.type === "Urgent") ? <td style={{color:"firebrick"}}>URGENT</td> : null}
                                          
             </tr>
             )) : null

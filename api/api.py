@@ -307,14 +307,15 @@ def create_request():
     type = "Normal"        
     reqid = req.get('id')
 
+    print("EST")
+    print(req.get('cost_is_estimate'))
+
     if not is_float(cost):
         ret = {'failure': 'Cost must be a decimal value'}  
         return ret, 200
 
     if req.get('urgent'):
-        type = "Urgent"
-
-    
+        type = "Urgent"    
 
     with app.app_context():
         if(reqid == None):        
@@ -325,6 +326,7 @@ def create_request():
                     title = req.get('title', None),
                     description = req.get('description', None),
                     cost = cost,
+                    cost_is_estimate = req.get('cost_is_estimate', None),
                     type = type,
                     status = "Pending",
                     create_date = date.today(),
@@ -336,7 +338,9 @@ def create_request():
             this_request.title = req.get('title', None)
             this_request.description = req.get('description', None)
             this_request.cost = cost
+            this_request.cost_is_estimate = req.get('cost_is_estimate', None)
             this_request.type = type
+            this_request.status = "Pending" if req.get('edit') else req.get('status', None)
             this_request.update_date = date.today()
             db.session.commit()
 
