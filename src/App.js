@@ -1,7 +1,9 @@
 import './App.css';
 import React, { Component, useEffect, useState } from "react";
-import RegisterModal from "./components/RegisterModal";
 import Modal from "./components/Modal";
+import RegisterModal from "./components/RegisterModal";
+import OrganizationModal from "./components/OrganizationModal";
+
 import {
   BrowserRouter as Router,
   Switch,
@@ -70,6 +72,7 @@ const refreshMyList = async () => {
 
 function InnerApp() {
   const [modal, setModal] = useState(false)  
+  const [orgModal, setOrgModal] = useState(false)  
   const [roles, setRoles] = useState('')
   const [activeItem, setActiveItem] = useState([])
   const [logged] = useAuth();    
@@ -92,9 +95,29 @@ function InnerApp() {
     })
   });   
 
+  const createOrgMutation = useMutation(newOrg => {
+    return authFetch('api/create_organization', {
+      method:'post',
+      body: JSON.stringify(newOrg)
+    })
+  });   
+
+  const toggle = () => {  
+    setModal(!modal);            
+  }  
+  
   const onSave = (r) => {
     createMutation.mutate(r)
     toggle()
+  }
+
+  const orgToggle = () => {  
+    setOrgModal(!orgModal);            
+  }  
+  
+  const orgSave = (r) => {
+    createOrgMutation.mutate(r)
+    orgToggle()
   }
 
   const onClickDelete = (r) => {
@@ -129,10 +152,6 @@ function InnerApp() {
     r.status = "Denied"
     r.urgent = (r.type === "Urgent")
     createMutation.mutate(r);
-  }
-
-  const toggle = () => {  
-    setModal(!modal);            
   }  
 
   const fetchRoles = () => {
@@ -164,9 +183,19 @@ function InnerApp() {
           <span style={{paddingTop: '20px'}}></span>
           
         </div>     
-        {/* <p>{status}</p>                     
-        <p>{error}</p>   */}
-        {/* {createMutation.isSuccess ? <div>Request added!</div> : null}               */}
+        <div class="dropdown" style={{
+          position: 'absolute',
+          right: '27%',
+          top: '4%'
+        }}>
+          <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Organization
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenu2">             
+            <button class="dropdown-item" type="button">Create Organization</button>
+            <button class="dropdown-item" type="button">asdf Organization</button>            
+          </div>
+        </div>
         <table className="table table-hover">
           <caption style={{captionSide:"top"}}>Requests</caption>
           <thead className="thead-dark">
@@ -197,47 +226,55 @@ function InnerApp() {
               ) : null}
               {(roles === "admin") ? (
                 <td>
-                  <button 
-                    className="btn btn-outline-success btn-sm"                                    
-                    onClick={() => onClickApprove(r)}
-                    >Approve
-                  </button>                   
-                  <span style={{paddingRight: '4px'}}></span>
-                  <button 
-                    className="btn btn-outline-danger btn-sm"                                    
-                    onClick={() => onClickDeny(r)}
-                    >Deny
-                  </button>
-                  <span style={{paddingRight: '4px'}}></span>
-                  <button                     
-                    className="btn btn-outline-primary btn-sm"                                    
-                    onClick={() => onClickEdit(r)}
-                    >Edit
-                  </button>
-                  <span style={{paddingRight: '4px'}}></span>
-                  <button 
-                    className="btn btn-outline-danger btn-sm"                                    
-                    onClick={() => onClickDelete(r)}
-                    //style={{color:"red"}}
-                    >X
-                  </button>
+                  <div class="btn-toolbar" role="toolbar" aria-label="Button Bar">
+                    <div class="btn-group mr-2" role="group" aria-label="Button Group">
+                      <button 
+                        className="btn btn-outline-success btn-sm"                                    
+                        onClick={() => onClickApprove(r)}
+                        >Approve
+                      </button>                   
+                      <span style={{paddingRight: '4px'}}></span>
+                      <button 
+                        className="btn btn-outline-danger btn-sm"                                    
+                        onClick={() => onClickDeny(r)}
+                        >Deny
+                      </button>
+                      <span style={{paddingRight: '4px'}}></span>
+                      <button                     
+                        className="btn btn-outline-primary btn-sm"                                    
+                        onClick={() => onClickEdit(r)}
+                        >Edit
+                      </button>
+                      <span style={{paddingRight: '4px'}}></span>                  
+                      <button 
+                        className="btn btn-outline-danger btn-sm"                                    
+                        onClick={() => onClickDelete(r)}
+                        //style={{color:"red"}}
+                        >X
+                      </button>
+                    </div>
+                  </div>
                 </td>
 
               ) : (
 
               <td>
-                  <button                     
-                    className="btn btn-outline-primary btn-sm"                                    
-                    onClick={() => onClickEdit(r)}
-                    >Edit
-                  </button>
-                  <span style={{paddingRight: '4px'}}></span>
-                  <button 
-                    className="btn btn-outline-danger btn-sm"                                    
-                    onClick={() => onClickDelete(r)}
-                    //style={{color:"red"}}
-                    >X
-                  </button>
+                <div class="btn-toolbar" role="toolbar" aria-label="Button Bar">
+                  <div class="btn-group mr-2" role="group" aria-label="Button Group">
+                    <button                     
+                      className="btn btn-outline-primary btn-sm"                                    
+                      onClick={() => onClickEdit(r)}
+                      >Edit
+                    </button>
+                    <span style={{paddingRight: '4px'}}></span>
+                    <button 
+                      className="btn btn-outline-danger btn-sm"                                    
+                      onClick={() => onClickDelete(r)}
+                      //style={{color:"red"}}
+                      >X
+                    </button>
+                  </div>
+                </div>
               </td>  )
               }
               {(r.type === "Urgent") ? <td style={{color:"firebrick"}}>URGENT</td> : null}
@@ -251,17 +288,21 @@ function InnerApp() {
         
         <Login/> 
         {modal ? (
-              <Modal
-                // activeItem={{
-                //   title: "",
-                //   description: "",
-                //   cost: 0,
-                //   request_is_estimate: false,
-                //   urgent: false
-                //   }}
+              <Modal                
                 activeItem={activeItem}
                 toggle={toggle}
                 onSave={onSave}
+              />
+      ) : null}
+
+        {orgModal ? (
+              <OrganizationModal                
+                activeItem={{
+                  code: "",
+                  name: ""
+                  }}
+                toggle={orgToggle}
+                onSave={orgSave}
               />
       ) : null}              
       </div>                     
@@ -366,17 +407,17 @@ function Login() {
       </div>  
       : <button style={{
           position: 'absolute',
-          left: '35%',
-          bottom: '10%'
-        }} className="btn btn-secondary mr-2" onClick={() => logout()}>
+          left: '32%',
+          top: '4%'
+        }} className="btn btn-outline-secondary btm-sm" onClick={() => logout()}>
         Sign Out
       </button>}
       {modal ? (
               <RegisterModal
                 activeItem={{
                   username: "",
-                  password: "",
-                  organization: "TEST"}}
+                  password: ""
+                  }}
                 toggle={toggle}
                 onSave={handleRegister}
               />

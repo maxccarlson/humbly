@@ -21,7 +21,7 @@ cors = flask_cors.CORS()
 class Organization(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.Text, unique=True)
-    name = db.Column(db.Text)    
+    name = db.Column(db.Text)       
 
     @property
     def get_id(self):
@@ -35,9 +35,6 @@ class Organization(db.Model):
     def get_name(self):
         return self.name
 
-    @property
-    def get_allow_list(self):
-        return self.allow_list
     
 class AllowList(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -178,11 +175,12 @@ with app.app_context():
     
     db.session.commit()
 
-
-# Set up some routes for the example
-@app.route('/api/')
-def home():
-  	return {"Hello": "World"}, 200
+def is_float(num):
+    try:
+        float(num)
+        return True
+    except ValueError:
+        return False
 
 @app.route('/api/login', methods=['POST'])
 def login():
@@ -206,26 +204,15 @@ def login():
 def register():    
 
     req = flask.request.get_json(force=True)    
-    org = req.get('organization', None)
-
-    exists = db.session.query(Organization).filter_by(code=org).first() is not None
-
-    if not exists:
-        ret = {'failure': 'Organization does not exist.'}  
-        return ret, 200
 
     with app.app_context():
         db.session.add(User(
             username=req.get('username', None),
             password=guard.hash_password(req.get('password', None)),
             roles='user',
-            organization=org,
+            organization='TEST',
             is_active=True,
-            ))     
-        db.session.add(AllowList(
-          organization=org,
-          user_id = ''.join(str(e) for e in [item[0] for item in (db.session.query(func.max(User.id)).all())]).replace('[','').replace(']','') 
-		))
+            ))             
         db.session.commit()
 
     # allows = db.session.query(AllowList).all()
@@ -254,18 +241,6 @@ def refresh():
     return ret, 200
 
 
-@app.route('/api/protected')
-@flask_praetorian.auth_required
-def protected():
-    """
-    A protected endpoint. The auth_required decorator will require a header
-    containing a valid JWT
-    .. example::
-       $ curl http://localhost:5000/api/protected -X GET \
-         -H "Authorization: Bearer <your_token>"
-    """
-    return {"message": f'protected endpoint (allowed user {flask_praetorian.current_user().username})'}
-
 @app.route('/api/my_requests', methods=['GET'])
 @flask_praetorian.auth_required
 def my_requests():
@@ -290,12 +265,23 @@ def my_roles():
     ret = {'roles':user.roles}    
     return ret,200
 
-def is_float(num):
-    try:
-        float(num)
-        return True
-    except ValueError:
-        return False
+@app.route('/api/create_organization', methods=['POST'])
+@flask_praetorian.auth_required
+def create_organization():    
+    
+    user = flask_praetorian.current_user()    
+    req = flask.request.get_json(force=True)  
+
+    with app.app_context():
+        db.session.add(Organization(
+                code = req.get('code', None),
+                name = req.get('name', None)
+            ))     
+        db.session.commit()        
+
+    ret = {'access_token': ''}  
+    return ret, 200
+
 
 @app.route('/api/create_request', methods=['POST'])
 @flask_praetorian.auth_required
