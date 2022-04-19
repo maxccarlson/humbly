@@ -57,6 +57,14 @@ class User(db.Model):
         except Exception:
             return []
 
+    @property
+    def orgs(self):
+        try:
+            return self.organization.split(',')
+        except Exception:
+            return []
+    
+
     @classmethod
     def lookup(cls, username):
         return cls.query.filter_by(username=username).one_or_none()
@@ -263,6 +271,13 @@ def my_requests():
 def my_roles():
     user = flask_praetorian.current_user()            
     ret = {'roles':user.roles}    
+    return ret,200
+
+@app.route('/api/my_orgs', methods=['GET'])
+@flask_praetorian.auth_required
+def my_orgs():
+    user = flask_praetorian.current_user()            
+    ret = {'orgs':user.orgs}    
     return ret,200
 
 @app.route('/api/create_organization', methods=['POST'])

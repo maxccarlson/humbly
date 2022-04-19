@@ -19,7 +19,7 @@ import {
   QueryClientProvider,
 } from 'react-query';
 import {login, authFetch, useAuth, logout} from "./auth";
-import Card from "reactstrap";
+import { Dropdown, DropdownToggle, DropdownMenu, DropdownItem } from "reactstrap";
 import { render } from '@testing-library/react';
 
 const queryClient = new QueryClient()
@@ -73,10 +73,11 @@ const refreshMyList = async () => {
 function InnerApp() {
   const [modal, setModal] = useState(false)  
   const [orgModal, setOrgModal] = useState(false)  
+  const [droppedDown, setDroppedDown] = useState(false)  
   const [roles, setRoles] = useState('')
+  const [orgs, setOrgs] = useState([])
   const [activeItem, setActiveItem] = useState([])
   const [logged] = useAuth();    
-
 
   const { status, data, error } = useQuery('requests', refreshMyList)
   const queryClient = useQueryClient()
@@ -135,6 +136,10 @@ function InnerApp() {
     toggle();
   }
 
+  const onClickDropdown = () => {
+    setDroppedDown(!droppedDown)
+  }
+
   const onClickEdit = (r) => {
     r.edit = true
     r.urgent = (r.type === "Urgent")
@@ -164,8 +169,19 @@ function InnerApp() {
     })
   }
 
+  const fetchOrgs = () => {
+    authFetch('api/my_orgs', {method:'get'})
+     .then(o => o.json())
+     .then(og => {
+       og = og.orgs
+       console.log(og)
+       setOrgs(og)
+     })
+   }
+
   useEffect(() => {
     fetchRoles()
+    fetchOrgs()
   })
   
 
@@ -180,21 +196,24 @@ function InnerApp() {
           >
             New Request
           </button>
-          <span style={{paddingTop: '20px'}}></span>
-          
+          <span style={{paddingTop: '20px'}}></span>          
         </div>     
+
         <div class="dropdown" style={{
           position: 'absolute',
           right: '27%',
           top: '4%'
         }}>
-          <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <button onClick={onClickDropdown} class="btn btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             Organization
           </button>
-          <div class="dropdown-menu" aria-labelledby="dropdownMenu2">             
-            <button class="dropdown-item" type="button">Create Organization</button>
-            <button class="dropdown-item" type="button">asdf Organization</button>            
+          {(droppedDown && typeof(orgs) !== 'undefined') ? ( orgs.map((o) => (          
+          <div class="dropdown-menu show" aria-labelledby="dropdownMenu">
+            <button class="dropdown-item" type="button">{o.name}</button>                              
+            <button style={{backgroundColor:"gold"}} class="dropdown-item" type="button">+ New Organization</button>                              
           </div>
+          ))
+            ) : null}            
         </div>
         <table className="table table-hover">
           <caption style={{captionSide:"top"}}>Requests</caption>
