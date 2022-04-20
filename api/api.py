@@ -21,7 +21,23 @@ cors = flask_cors.CORS()
 class Organization(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     code = db.Column(db.Text, unique=True)
-    name = db.Column(db.Text)       
+    name = db.Column(db.Text)      
+    admins = db.Column(db.Text)
+    users = db.Column(db.Text)
+
+    @property
+    def get_admins(self):
+        try:
+            return self.admins.split(',')
+        except Exception:
+            return []
+
+    @property
+    def get_users(self):
+        try:
+            return self.users.split(',')
+        except Exception:
+            return []
 
     @property
     def get_id(self):
@@ -35,11 +51,15 @@ class Organization(db.Model):
     def get_name(self):
         return self.name
 
-    
-class AllowList(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    organization = db.Column(db.Text)
-    user_id = db.Column(db.Integer)
+    @property
+    def meta(self):
+        return {
+            "id: " : self.id,
+            "code: " : self.code,
+            "name: " : self.name,
+            "admins: " : self.admins,
+            "users: " : self.users            
+        }
 
 # A generic user model that might be used by an app powered by flask-praetorian
 class User(db.Model):
@@ -64,7 +84,6 @@ class User(db.Model):
         except Exception:
             return []
     
-
     @classmethod
     def lookup(cls, username):
         return cls.query.filter_by(username=username).one_or_none()
@@ -157,11 +176,7 @@ with app.app_context():
         db.session.add(Organization(
           code='TEST',
           name='Test Organization',
-		))
-    if db.session.query(AllowList).filter_by(id=1).count() < 1:
-        db.session.add(AllowList(
-          organization='TEST',
-          user_id=1,
+          admins="1"
 		))
     
     # db.session.add(Request(
@@ -223,10 +238,6 @@ def register():
             ))             
         db.session.commit()
 
-    # allows = db.session.query(AllowList).all()
-    # for allow in allows:
-    #     print(allow.user_id)
-
     # users = db.session.query(User).all()
     # for user in users:
     #     print(user.meta)
@@ -266,11 +277,13 @@ def my_requests():
     ret = {'requests':request_list}    
     return ret,200
 
-@app.route('/api/my_roles', methods=['GET'])
+@app.route('/api/is_admin', methods=['POST'])
 @flask_praetorian.auth_required
-def my_roles():
-    user = flask_praetorian.current_user()            
-    ret = {'roles':user.roles}    
+def is_admin():
+    user = flask_praetorian.current_user()    
+    org_code = flask.request.get_json(force=True)          
+    is_admin = db.session.query(Organization).filter(Organization.admins.contains(user.id)).filter_by(code=org_code).first() is not None
+    ret = {'is_admin':is_admin}       
     return ret,200
 
 @app.route('/api/my_orgs', methods=['GET'])
@@ -290,8 +303,10 @@ def create_organization():
     with app.app_context():
         db.session.add(Organization(
                 code = req.get('code', None),
-                name = req.get('name', None)
-            ))     
+                name = req.get('name', None),
+                admins = user.id
+            ))   
+        user.organization += "," + req.get('code', None)
         db.session.commit()        
 
     ret = {'access_token': ''}  

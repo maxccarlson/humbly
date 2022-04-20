@@ -73,14 +73,15 @@ const refreshMyList = async () => {
 function InnerApp() {
   const [modal, setModal] = useState(false)  
   const [orgModal, setOrgModal] = useState(false)  
-  const [droppedDown, setDroppedDown] = useState(false)  
-  const [roles, setRoles] = useState('')
+  const [droppedDown, setDroppedDown] = useState(false)    
   const [orgs, setOrgs] = useState([])
+  const [activeOrg, setActiveOrg] = useState('')
+  const [activeAdmin, setActiveAdmin] = useState(false)
   const [activeItem, setActiveItem] = useState([])
   const [logged] = useAuth();    
 
   const { status, data, error } = useQuery('requests', refreshMyList)
-  const queryClient = useQueryClient()
+  // const queryClient = useQueryClient()
   
   const deleteMutation = useMutation(delRequest => {
     return fetch('api/delete_request',{
@@ -136,8 +137,12 @@ function InnerApp() {
     toggle();
   }
 
-  const onClickDropdown = () => {
+  const onClickDropdown = () => {    
     setDroppedDown(!droppedDown)
+  }
+
+  const onClickNewOrg = () => {   
+    orgToggle()
   }
 
   const onClickEdit = (r) => {
@@ -159,13 +164,14 @@ function InnerApp() {
     createMutation.mutate(r);
   }  
 
-  const fetchRoles = () => {
-   authFetch('api/my_roles', {method:'get'})
-    .then(r => r.json())
-    .then(rl => {
-      rl = rl.roles
-      console.log(rl)
-      setRoles(rl)
+  const isAdmin = () => {
+   authFetch('api/is_admin', {method:'post', body: JSON.stringify(activeOrg)})
+    .then(a => a.json())
+    .then(ad => {
+      ad = ad.is_admin
+      console.log("ad")
+      console.log(ad)
+      setActiveAdmin(ad)
     })
   }
 
@@ -174,13 +180,15 @@ function InnerApp() {
      .then(o => o.json())
      .then(og => {
        og = og.orgs
-       console.log(og)
+      //  console.log(og)
        setOrgs(og)
      })
    }
 
   useEffect(() => {
-    fetchRoles()
+    if(activeOrg=='')
+      setActiveOrg('TEST')
+    isAdmin()
     fetchOrgs()
   })
   
@@ -199,21 +207,21 @@ function InnerApp() {
           <span style={{paddingTop: '20px'}}></span>          
         </div>     
 
-        <div class="dropdown" style={{
+        <div className="dropdown" style={{
           position: 'absolute',
           right: '27%',
           top: '4%'
         }}>
-          <button onClick={onClickDropdown} class="btn btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+          <button onClick={onClickDropdown} className="btn btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenu" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             Organization
           </button>
-          {(droppedDown && typeof(orgs) !== 'undefined') ? ( orgs.map((o) => (          
-          <div class="dropdown-menu show" aria-labelledby="dropdownMenu">
-            <button class="dropdown-item" type="button">{o.name}</button>                              
-            <button style={{backgroundColor:"gold"}} class="dropdown-item" type="button">+ New Organization</button>                              
+          {(droppedDown) ? (          
+          <div className="dropdown-menu show" aria-labelledby="dropdownMenu"> 
+            {(typeof(orgs) !== 'undefined') ? orgs.map((o) => (<button className="dropdown-item" type="button" key={o}>{o}</button>)) : null}            
+            <button style={{backgroundColor:"gold"}} className="dropdown-item" type="button" onClick={onClickNewOrg}>New Organization</button>                              
           </div>
-          ))
-            ) : null}            
+          )
+           : null}            
         </div>
         <table className="table table-hover">
           <caption style={{captionSide:"top"}}>Requests</caption>
@@ -224,7 +232,7 @@ function InnerApp() {
               <th scope="col">Cost</th>            
               <th scope="col">State</th>
               <th scope="col">Created</th>
-              {(roles === "admin") ? (
+              {(activeAdmin) ? (
                 <th scope="col">User</th>
               ) : null}
             </tr> }
@@ -240,10 +248,10 @@ function InnerApp() {
               <td>{r.cost_is_estimate ? (String("$" + r.cost + " (Est.)")) : String("$" + r.cost)}</td>
               <td className={(r.status === "Approved") ? "table-success" : ((r.status === "Denied") ? "table-danger" : "table-light")}>{r.status}</td>
               <td style={{fontSize:"10px"}}>{(r.create_date != null) ? r.create_date.split(' ')[1] + " " + r.create_date.split(' ')[2] + " " + r.create_date.split(' ')[3] : ""}</td>
-              {(roles === "admin") ? (
+              {(activeAdmin) ? (
                 <td style={{}}>{r.req_user}</td>
               ) : null}
-              {(roles === "admin") ? (
+              {(activeAdmin) ? (
                 <td>
                   <div class="btn-toolbar" role="toolbar" aria-label="Button Bar">
                     <div class="btn-group mr-2" role="group" aria-label="Button Group">
