@@ -120,6 +120,7 @@ function InnerApp() {
   const orgSave = (r) => {
     createOrgMutation.mutate(r)
     orgToggle()
+    // setDroppedDown(!droppedDown)
   }
 
   const onClickDelete = (r) => {
@@ -164,16 +165,7 @@ function InnerApp() {
     createMutation.mutate(r);
   }  
 
-  const isAdmin = () => {
-   authFetch('api/is_admin', {method:'post', body: JSON.stringify(activeOrg)})
-    .then(a => a.json())
-    .then(ad => {
-      ad = ad.is_admin
-      console.log("ad")
-      console.log(ad)
-      setActiveAdmin(ad)
-    })
-  }
+  
 
   const fetchOrgs = () => {
     authFetch('api/my_orgs', {method:'get'})
@@ -186,11 +178,21 @@ function InnerApp() {
    }
 
   useEffect(() => {
-    if(activeOrg=='')
+
+    const isAdmin = () => {
+      authFetch('api/is_admin', {method:'post', body: JSON.stringify(activeOrg)})
+       .then(a => a.json())
+       .then(ad => {
+         ad = ad.is_admin         
+         setActiveAdmin(ad)
+       })
+     }
+
+    if(activeOrg==='')
       setActiveOrg('TEST')
     isAdmin()
     fetchOrgs()
-  })
+  },[activeOrg])
   
 
   if(logged){        
@@ -222,57 +224,79 @@ function InnerApp() {
           </div>
           )
            : null}            
-        </div>
-        <table className="table table-hover">
-          <caption style={{captionSide:"top"}}>Requests</caption>
-          <thead className="thead-dark">
-            { <tr>
-              <th scope="col">Title</th>                              
-              <th scope="col">Description</th>
-              <th scope="col">Cost</th>            
-              <th scope="col">State</th>
-              <th scope="col">Created</th>
-              {(activeAdmin) ? (
-                <th scope="col">User</th>
-              ) : null}
-            </tr> }
-          </thead>
-          <tbody>                
-            {typeof(data) !== 'undefined' ?               
-            data.map((r) => (              
-              <tr key={r.id}
-                className={(r.type === "Urgent") ? "table-danger" : "table-light"}
-              >                            
-              <th scope="row">{r.title}</th>               
-              <td>{r.description}</td>
-              <td>{r.cost_is_estimate ? (String("$" + r.cost + " (Est.)")) : String("$" + r.cost)}</td>
-              <td className={(r.status === "Approved") ? "table-success" : ((r.status === "Denied") ? "table-danger" : "table-light")}>{r.status}</td>
-              <td style={{fontSize:"10px"}}>{(r.create_date != null) ? r.create_date.split(' ')[1] + " " + r.create_date.split(' ')[2] + " " + r.create_date.split(' ')[3] : ""}</td>
-              {(activeAdmin) ? (
-                <td style={{}}>{r.req_user}</td>
-              ) : null}
-              {(activeAdmin) ? (
+        </div>        
+          <table className="table table-hover">
+            <caption style={{captionSide:"top"}}>Requests</caption>
+            <thead className="thead-dark">
+              { <tr>
+                <th scope="col">Title</th>                              
+                <th scope="col">Description</th>
+                <th scope="col">Cost</th>            
+                <th scope="col">State</th>
+                <th scope="col">Created</th>
+                {(activeAdmin) ? (
+                  <th scope="col">User</th>
+                ) : null}
+              </tr> }
+            </thead>            
+            <tbody> 
+              {typeof(data) !== 'undefined' ?               
+              data.map((r) => (
+
+                <tr key={r.id}
+                  className={(r.type === "Urgent") ? "table-danger" : "table-light"}
+                >                            
+                  <th scope="row" key={r.title}>{r.title}</th>               
+                  <td key={r.description}>{r.description}</td>
+                  <td key={r.cost}>{r.cost_is_estimate ? (String("$" + r.cost + " (Est.)")) : String("$" + r.cost)}</td>
+                  <td key={r.status} className={(r.status === "Approved") ? "table-success" : ((r.status === "Denied") ? "table-danger" : "table-light")}>{r.status}</td>
+                  <td key={r.create_date} style={{fontSize:"10px"}}>{(r.create_date != null) ? r.create_date.split(' ')[1] + " " + r.create_date.split(' ')[2] + " " + r.create_date.split(' ')[3] : ""}</td>
+                  {(activeAdmin) ? (
+                    <td key={r.req_user} style={{}}>{r.req_user}</td>
+                  ) : null}
+                  {(activeAdmin) ? (
+                    <td>
+                      <div className="btn-toolbar" role="toolbar" aria-label="Button Bar">
+                        <div className="btn-group mr-2" role="group" aria-label="Button Group">
+                          <button 
+                            className="btn btn-outline-success btn-sm"                                    
+                            onClick={() => onClickApprove(r)}
+                            >Approve
+                          </button>                   
+                          <span style={{paddingRight: '4px'}}></span>
+                          <button 
+                            className="btn btn-outline-danger btn-sm"                                    
+                            onClick={() => onClickDeny(r)}
+                            >Deny
+                          </button>
+                          <span style={{paddingRight: '4px'}}></span>
+                          <button                     
+                            className="btn btn-outline-primary btn-sm"                                    
+                            onClick={() => onClickEdit(r)}
+                            >Edit
+                          </button>
+                          <span style={{paddingRight: '4px'}}></span>                  
+                          <button 
+                            className="btn btn-outline-danger btn-sm"                                    
+                            onClick={() => onClickDelete(r)}
+                            //style={{color:"red"}}
+                            >X
+                          </button>
+                        </div>
+                      </div>
+                    </td>
+
+                ) : (
+
                 <td>
-                  <div class="btn-toolbar" role="toolbar" aria-label="Button Bar">
-                    <div class="btn-group mr-2" role="group" aria-label="Button Group">
-                      <button 
-                        className="btn btn-outline-success btn-sm"                                    
-                        onClick={() => onClickApprove(r)}
-                        >Approve
-                      </button>                   
-                      <span style={{paddingRight: '4px'}}></span>
-                      <button 
-                        className="btn btn-outline-danger btn-sm"                                    
-                        onClick={() => onClickDeny(r)}
-                        >Deny
-                      </button>
-                      <span style={{paddingRight: '4px'}}></span>
+                  <div className="btn-toolbar" role="toolbar" aria-label="Button Bar">
+                    <div className="btn-group mr-2" role="group" aria-label="Button Group">
                       <button                     
                         className="btn btn-outline-primary btn-sm"                                    
                         onClick={() => onClickEdit(r)}
                         >Edit
                       </button>
-                      <span style={{paddingRight: '4px'}}></span>                  
+                      <span style={{paddingRight: '4px'}}></span>
                       <button 
                         className="btn btn-outline-danger btn-sm"                                    
                         onClick={() => onClickDelete(r)}
@@ -281,37 +305,13 @@ function InnerApp() {
                       </button>
                     </div>
                   </div>
-                </td>
-
-              ) : (
-
-              <td>
-                <div class="btn-toolbar" role="toolbar" aria-label="Button Bar">
-                  <div class="btn-group mr-2" role="group" aria-label="Button Group">
-                    <button                     
-                      className="btn btn-outline-primary btn-sm"                                    
-                      onClick={() => onClickEdit(r)}
-                      >Edit
-                    </button>
-                    <span style={{paddingRight: '4px'}}></span>
-                    <button 
-                      className="btn btn-outline-danger btn-sm"                                    
-                      onClick={() => onClickDelete(r)}
-                      //style={{color:"red"}}
-                      >X
-                    </button>
-                  </div>
-                </div>
-              </td>  )
-              }
-              {(r.type === "Urgent") ? <td style={{color:"firebrick"}}>URGENT</td> : null}
-                                         
-            </tr>
-            )) : null
-            }        
-          </tbody>
-          
-        </table>                     
+                </td>  )
+                }
+                {(r.type === "Urgent") ? <td style={{color:"firebrick"}}>URGENT</td> : null}                                         
+                </tr>               
+              )) : null}
+            </tbody>            
+          </table>     
         
         <Login/> 
         {modal ? (
