@@ -2,7 +2,6 @@ import './App.css';
 import React, { Component, useEffect, useState } from "react";
 import Modal from "./components/Modal";
 import RegisterModal from "./components/RegisterModal";
-import OrganizationModal from "./components/OrganizationModal";
 
 import {
   BrowserRouter as Router,
@@ -87,7 +86,14 @@ function InnerApp() {
     return fetch('api/delete_request',{
       method:'post',
       body: JSON.stringify(delRequest)
-    })            
+    })
+    }, {
+      // FG: not sure if this is correct, since I can't run locally
+      // but the idea here is to cause a refresh by resetting query data
+      // see here: https://react-query.tanstack.com/guides/updates-from-mutation-responses
+      onSuccess: (data) => {
+        queryClient.setQueryData(data)
+      }            
   });
 
   const createMutation = useMutation(newRequest => {
@@ -322,7 +328,7 @@ function InnerApp() {
               />
       ) : null}
 
-        {orgModal ? (
+        {/* {orgModal ? (
               <OrganizationModal                
                 activeItem={{
                   code: "",
@@ -331,7 +337,7 @@ function InnerApp() {
                 toggle={orgToggle}
                 onSave={orgSave}
               />
-      ) : null}              
+      ) : null}               */}
       </div>                     
     );      
   }
